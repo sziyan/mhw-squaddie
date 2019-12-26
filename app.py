@@ -21,6 +21,7 @@ from mongoengine import connect
 
 db = connect('sg', host="mongodb+srv://ndg:P%40ssw0rd@ndg-3djuk.gcp.mongodb.net/sg?retryWrites=true&w=majority")
 TOKEN = '976932675:AAHRy9-sEEvbEfP8krrI2PkWESJmQADh888'
+
 class Player(Document):
     username = StringField(max_length=200, required=True)
     player_name = StringField(max_length=200, required=True)
@@ -46,7 +47,7 @@ logger = logging.getLogger(__name__)
 # context. Error handlers also receive the raised TelegramError object in error.
 
 def check_chat(id):
-    if id == '-1001336587845':
+    if id == -1001336587845:
         return True
     else:
         return False
@@ -78,6 +79,7 @@ def siegestatus():
 
 def help(update, context):
     """Send a message when the command /help is issued."""
+    print(update.message.chat.id)
     update.message.reply_text('Help!')
 
 def setsiege(update, context):
@@ -92,7 +94,7 @@ def setsiege(update, context):
             host = update.message.from_user.username
             siege = Siege(time=time, host=host)
             siege.save()
-            player = Player(username=host, time=time)
+            player = Player(username=host, time=time, player_name = update.message.from_user.first_name)
             player.save()
             update.message.reply_markdown('Siege scheduled at *{}*. \n Use /joinsiege to indicate your interest!'.format(time))
         db.close()
