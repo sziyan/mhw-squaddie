@@ -65,7 +65,7 @@ def siegestatus():
                 index += 1
                 players.append(message)
             players_list = "\n".join(players)
-            msg = "Siege time: *{}* \n*Players: ({})* \n{}".format(time, Player.objects.count(), players_list)
+            msg = "Siege time: <b>{}</b> \n<b>Players: ({})</b> \n{}".format(time, Player.objects.count(), players_list)
         else:
             msg = "No players in siege."
     else:
@@ -100,7 +100,7 @@ def setsiege(update, context):
             siege.save()
             player = Player(username=host, time=time)
             player.save()
-            update.message.reply_markdown('Siege scheduled at *{}*. \n Use /joinsiege to indicate your interest!'.format(time))
+            update.message.reply_html('Siege scheduled at <b>{}</b>. \n Use /joinsiege to indicate your interest!'.format(time))
         db.close()
 
 def joinsiege(update, context):
@@ -117,13 +117,13 @@ def joinsiege(update, context):
                 player_username = update.message.from_user.username
                 player = Player(username=player_username,time=siege_time, player_name= update.message.from_user.first_name)
                 player.save()
-                update.message.reply_markdown(siegestatus())
+                update.message.reply_html(siegestatus())
 
             else:
                 player_username = update.message.from_user.username
                 player = Player(username=player_username, time=siege_time,player_name=update.message.from_user.first_name)
                 player.save()
-                update.message.reply_markdown(siegestatus())
+                update.message.reply_html(siegestatus())
         else:
             update.message.reply_text("No siege scheduled at the moment.")
         db.close()
@@ -134,7 +134,7 @@ def leavesiege(update, context):
             for player in Player.objects:
                 if update.message.from_user.username == player.username:
                     player.delete()
-                    update.message.reply_markdown('Left the siege. \n{}'.format(siegestatus()))
+                    update.message.reply_html('Left the siege. \n{}'.format(siegestatus()))
                     db.close()
                     return
             update.message.reply_text('Not in any siege.')
@@ -145,7 +145,7 @@ def leavesiege(update, context):
 def checksiege(update, context):
     if check_chat(update.message.chat.id):
         if Siege.objects.count() > 0:
-            update.message.reply_markdown(siegestatus())
+            update.message.reply_html(siegestatus())
         else:
             update.message.reply_text("No siege scheduled at the moment.")
         db.close()
@@ -180,7 +180,7 @@ def changetime(update, context):
             siege.time = new_time
             siege.save()
             db.close()
-            update.message.reply_markdown("Siege timing change to *{}*. \n{}".format(new_time, siegestatus()))
+            update.message.reply_html("Siege timing change to <b>{}</b>. \n{}".format(new_time, siegestatus()))
         else:
             update.message.reply_text("No siege scheduled at the moment. \nUse /setsiege <time> to schedule a siege.")
 
@@ -190,7 +190,7 @@ def new_member(update,context):
         newcomer = member.first_name
         newplayer = NewPlayer(username=member.username)
         newplayer.save()
-        update.message.reply_markdown("Welcome {} to the group! \nCheck the pinned message to add your IGN for others to add you. \nEnjoy your hunts.".format(newcomer))
+        update.message.reply_html("Welcome {} to the group! \nCheck the pinned message to add your IGN for others to add you. \nEnjoy your hunts.".format(newcomer))
         db.close()
 
 def pendingsquad(update,context):
@@ -203,7 +203,7 @@ def pendingsquad(update,context):
                 index += 1
                 new_players.append(message)
             msg = "\n".join(new_players)
-            update.message.reply_markdown("The following players just joined group and is pending to be added to squad: \n{}".format(msg))
+            update.message.reply_html("The following players just joined group and is pending to be added to squad: \n{}".format(msg))
             db.close()
         else:
             update.message.reply_text("No pending members to join squad.")
@@ -217,7 +217,7 @@ def invitedsquad(update, context):
             player_name = context.args[0]
             for member in NewPlayer.objects:
                 if player_name == member.username:
-                    update.message.reply_markdown("*{}* removed from list.".format(member.username))
+                    update.message.reply_html("<b>{}</b> removed from list.".format(member.username))
                     member.delete()
                     db.close()
                     return
