@@ -47,10 +47,11 @@ logger = logging.getLogger(__name__)
 # context. Error handlers also receive the raised TelegramError object in error.
 
 def check_chat(id):
-    if id == -1001336587845:
-        return True
-    else:
-        return False
+    # if id == -1001336587845:
+    #     return True
+    # else:
+    #     return False
+    return True
 
 def siegestatus():
     if Siege.objects.count() > 0:
@@ -58,15 +59,18 @@ def siegestatus():
         time = siege.time
         players = []
         index = 1
-        for player in Player.objects:
-            message = "{}. {} ({})".format(index, player.username, player.first_name)
-            index += 1
-            players.append(message)
-        players_list = "\n".join(players)
-        msg = "Siege time: *{}* \n*Players: ({})* \n{}".format(time, Player.objects.count(), players_list)
+        if Player.objects.count() > 0:
+            for player in Player.objects:
+                message = "{}. {} ({})".format(index, player.username, player.first_name)
+                index += 1
+                players.append(message)
+            players_list = "\n".join(players)
+            msg = "Siege time: *{}* \n*Players: ({})* \n{}".format(time, Player.objects.count(), players_list)
+        else:
+            msg = "No players in siege."
     else:
         msg = 'No siege scheduled at the moment.'
-    db.close()
+        db.close()
     return msg
 
 # def start(update, context):
@@ -105,21 +109,28 @@ def joinsiege(update, context):
             siege = Siege.objects[0]
             siege_time = siege.time
             player_username = update.message.from_user.username
-            for player in Player.objects:
-                if player.username == player_username:
-                    update.message.reply_text("Already in siege.")
-                    return
-            player_username = update.message.from_user.username
-            player = Player(username=player_username,time=siege_time, player_name= update.message.from_user.first_name)
-            player.save()
-            update.message.reply_markdown(siegestatus())
+            if Player.objects.count() > 0:
+                for player in Player.objects:
+                    if player.username == player_username:
+                        update.message.reply_text("Already in siege.")
+                        return
+                player_username = update.message.from_user.username
+                player = Player(username=player_username,time=siege_time, player_name= update.message.from_user.first_name)
+                player.save()
+                update.message.reply_markdown(siegestatus())
+
+            else:
+                player_username = update.message.from_user.username
+                player = Player(username=player_username, time=siege_time,player_name=update.message.from_user.first_name)
+                player.save()
+                update.message.reply_markdown(siegestatus())
         else:
             update.message.reply_text("No siege scheduled at the moment.")
         db.close()
 
 def leavesiege(update, context):
     if check_chat(update.message.chat.id):
-        if Siege.objects.count() > 0 or Player.objects.count() > 0:
+        if Siege.objects.count() > 0 and Player.objects.count() > 0:
             for player in Player.objects:
                 if update.message.from_user.username == player.username:
                     player.delete()
@@ -144,9 +155,11 @@ def deletesiege(update,context):
         if Siege.objects.count() > 0:
             siege = Siege.objects[0]
             siege.delete()
-            for player in Player.objects:
-                player.delete()
-            update.message.reply_text('Siege deleted. Type /setsiege <time> to schedule a new siege.')
+            if Player.objects.count() > 0:
+                for player in Player.objects:
+                    player.delete()
+                update.message.reply_text('Siege deleted. Type /setsiege <time> to schedule a new siege.')
+            update.message.reply_text("No players in siege to delete. Siege deleted.")
         else:
             update.message.reply_text("No siege to delete.")
         db.close()
