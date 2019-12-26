@@ -104,8 +104,9 @@ def joinsiege(update, context):
         if Siege.objects.count() > 0:
             siege = Siege.objects[0]
             siege_time = siege.time
+            player_username = update.message.from_user.username
             for player in Player.objects:
-                if player.username == player_name:
+                if player.username == player_username:
                     update.message.reply_text("Already in siege.")
                     return
             player_username = update.message.from_user.username
