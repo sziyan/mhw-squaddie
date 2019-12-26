@@ -24,7 +24,7 @@ TOKEN = '976932675:AAHRy9-sEEvbEfP8krrI2PkWESJmQADh888'
 
 class Player(Document):
     username = StringField(max_length=200, required=True)
-    player_name = StringField(max_length=200, required=True)
+    player_name = StringField(max_length=200, required=False)
     time = StringField(max_length=200, required=False)
 
 class Siege(Document):
@@ -109,7 +109,7 @@ def joinsiege(update, context):
                 if player.username == player_name:
                     update.message.reply_text("Already in siege.")
                     return
-            player = Player(username=player_name,time=siege_time)
+            player = Player(username=player_name,time=siege_time, player_name= update.message.from_user.first_name)
             player.save()
             update.message.reply_markdown(siegestatus())
         else:
