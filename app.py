@@ -23,7 +23,7 @@ db = connect('sg', host="mongodb+srv://ndg:P%40ssw0rd@ndg-3djuk.gcp.mongodb.net/
 TOKEN = '976932675:AAHRy9-sEEvbEfP8krrI2PkWESJmQADh888'
 
 class Player(Document):
-    username = StringField(max_length=200, required=True)
+    username = StringField(max_length=200, required=False)
     player_name = StringField(max_length=200, required=False)
     time = StringField(max_length=200, required=False)
 
