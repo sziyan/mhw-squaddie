@@ -94,7 +94,7 @@ def setsiege(update, context):
             host = update.message.from_user.username
             siege = Siege(time=time, host=host)
             siege.save()
-            player = Player(username=host, time=time, player_name = update.message.from_user.first_name)
+            player = Player(username=host, time=time)
             player.save()
             update.message.reply_markdown('Siege scheduled at *{}*. \n Use /joinsiege to indicate your interest!'.format(time))
         db.close()
