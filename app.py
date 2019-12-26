@@ -47,11 +47,11 @@ logger = logging.getLogger(__name__)
 # context. Error handlers also receive the raised TelegramError object in error.
 
 def check_chat(id):
-    # if id == -1001336587845:
-    #     return True
-    # else:
-    #     return False
-    return True
+    if id == -1001336587845:
+        return True
+    else:
+        return False
+    # return True
 
 def siegestatus():
     if Siege.objects.count() > 0:
@@ -61,7 +61,7 @@ def siegestatus():
         index = 1
         if Player.objects.count() > 0:
             for player in Player.objects:
-                message = "{}. {} ({})".format(index, player.username, player.first_name)
+                message = "{}. {} ({})".format(index, player.username, player.player_name)
                 index += 1
                 players.append(message)
             players_list = "\n".join(players)
@@ -169,6 +169,22 @@ def deletesiege(update,context):
 #     """Echo the user message."""
 #     update.message.reply_text(update.message.text)
 
+def changetime(update, context):
+    if check_chat(update.message.chat.id):
+        if len(context.args) == 0:
+            update.message.reply_text("Syntax is /changetime <new time>.")
+            return
+        if Siege.objects.count() > 0:
+            new_time = (context.args[0]).upper()
+            siege = Siege.objects[0]
+            siege.time = new_time
+            siege.save()
+            db.close()
+            update.message.reply_markdown("Siege timing change to *{}*. \n{}".format(new_time, siegestatus()))
+        else:
+            update.message.reply_text("No siege scheduled at the moment. \nUse /setsiege <time> to schedule a siege.")
+
+
 def new_member(update,context):
     for member in update.message.new_chat_members:
         newcomer = member.first_name
@@ -235,6 +251,7 @@ def main():
     dp.add_handler(CommandHandler('deletesiege', deletesiege))
     dp.add_handler(CommandHandler('pendingsquad', pendingsquad))
     dp.add_handler(CommandHandler('invitedsquad', invitedsquad))
+    dp.add_handler(CommandHandler('changetime', changetime))
 
     # on noncommand i.e message - echo the message on Telegram
     dp.add_handler(MessageHandler(Filters.status_update.new_chat_members, new_member))
