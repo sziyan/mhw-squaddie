@@ -29,10 +29,10 @@ class Player(Document):
 
 class Siege(Document):
     time = StringField(max_length=200, required = True)
-    host = StringField(max_length=200, required = True)
+    host = StringField(max_length=200, required = False)
 
 class NewPlayer(Document):
-    username = StringField(max_length=200, required= True)
+    first_name = StringField(max_length=200, required = False)
 
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
@@ -65,7 +65,7 @@ def siegestatus():
                 index += 1
                 players.append(message)
             players_list = "\n".join(players)
-            msg = "Siege time: <b>{}</b> \n<b>Players: ({})</b> \n{}".format(time, Player.objects.count(), players_list)
+            msg = "<b>Siege time:</b> {} (GMT +8) \n<b>Players:</b> {} \n{}".format(time, Player.objects.count(), players_list)
         else:
             msg = "No players in siege."
     else:
@@ -96,9 +96,10 @@ def setsiege(update, context):
         else:
             time = str((context.args[0]).upper())
             host = update.message.from_user.username
+            player_name = update.message.from_user.first_name
             siege = Siege(time=time, host=host)
             siege.save()
-            player = Player(username=host, time=time)
+            player = Player(username=host, time=time, player_name=player_name)
             player.save()
             update.message.reply_html('Siege scheduled at <b>{}</b>. \n Use /joinsiege to indicate your interest!'.format(time))
         db.close()
@@ -109,35 +110,57 @@ def joinsiege(update, context):
             siege = Siege.objects[0]
             siege_time = siege.time
             player_username = update.message.from_user.username
-            if Player.objects.count() > 0:
+            player_firstname = update.message.from_user.first_name
+            if Player.objects.count() > 0: #at least 1 player in list
                 for player in Player.objects:
-                    if player.username == player_username:
-                        update.message.reply_text("Already in siege.")
-                        return
-                player_username = update.message.from_user.username
-                player = Player(username=player_username,time=siege_time, player_name= update.message.from_user.first_name)
-                player.save()
-                update.message.reply_html(siegestatus())
-
-            else:
+                    if player_username is not None: #sender has username
+                        if player.username == player_username: # sender already in list
+                            update.message.reply_text("Already in siege. Type /checksiege for siege status.")
+                            return
+                        else: #sender not in list
+                            player = Player(username=player_username,time=siege_time, player_name=update.message.from_user.first_name)
+                            player.save()
+                            update.message.reply_html(siegestatus())
+                    else: #sender no username
+                        if player_firstname == player.player_name: #sender already in list || check by firstname instead
+                            update.message.reply_text("Already in siege.")
+                            return
+                        else: #sender not in list
+                            player_name = update.message.from_user.first_name
+                            player = Player(username=player_username, time=siege_time, player_name=player_name)
+                            player.save()
+                            update.message.reply_html(siegestatus())
+            else: #no player object
                 player_username = update.message.from_user.username
                 player = Player(username=player_username, time=siege_time,player_name=update.message.from_user.first_name)
                 player.save()
                 update.message.reply_html(siegestatus())
-        else:
+        else: #no siege
             update.message.reply_text("No siege scheduled at the moment.")
         db.close()
 
 def leavesiege(update, context):
     if check_chat(update.message.chat.id):
         if Siege.objects.count() > 0 and Player.objects.count() > 0:
+            player_username = update.message.from_user.username
+            player_name = update.message.from_user.first_name
             for player in Player.objects:
-                if update.message.from_user.username == player.username:
-                    player.delete()
-                    update.message.reply_html('Left the siege. \n{}'.format(siegestatus()))
-                    db.close()
-                    return
-            update.message.reply_text('Not in any siege.')
+                if player.username is not None: #sender has username set
+                    if player_username == player.username: #if found username
+                        player.delete()
+                        update.message.reply_html('Left the siege. \n{}'.format(siegestatus()))
+                        db.close()
+                        return
+                    else: #cannot find username
+                        update.message.reply_text('You are not in any siege.')
+                else: #sender username not set
+                    if player_name == player.player_name:
+                        player.delete()
+                        update.message.reply_html('Left the siege. \n{}'.format(siegestatus()))
+                        db.close()
+                        return
+                    else:
+                        update.message.reply_text('You are not in any siege.')
         else:
             update.message.reply_text('No siege scheduled.')
         db.close()
@@ -188,7 +211,7 @@ def changetime(update, context):
 def new_member(update,context):
     for member in update.message.new_chat_members:
         newcomer = member.first_name
-        newplayer = NewPlayer(username=member.username)
+        newplayer = NewPlayer(first_name=newcomer)
         newplayer.save()
         update.message.reply_html("Welcome {} to the group! \nCheck the pinned message to add your IGN for others to add you. \nEnjoy your hunts.".format(newcomer))
         db.close()
@@ -199,7 +222,7 @@ def pendingsquad(update,context):
             new_players = []
             index = 1
             for member in NewPlayer.objects:
-                message = "{}. {}".format(index, member.username)
+                message = "{}. {}".format(index, member.first_name)
                 index += 1
                 new_players.append(message)
             msg = "\n".join(new_players)
@@ -216,8 +239,8 @@ def invitedsquad(update, context):
                 return
             player_name = context.args[0]
             for member in NewPlayer.objects:
-                if player_name == member.username:
-                    update.message.reply_html("<b>{}</b> removed from list.".format(member.username))
+                if player_name == member.first_name:
+                    update.message.reply_html("<b>{}</b> removed from list.".format(member.first_name))
                     member.delete()
                     db.close()
                     return

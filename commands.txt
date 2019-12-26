@@ -1,0 +1,8 @@
+setsiege - Schedule a siege.
+joinsiege - Register your interest in a scheduled siege.
+leavesiege - Leave a scheduled siege.
+checksiege - Check the status of current scheduled siege.
+deletesiege - Delete current scheduled siege.
+changetime - Change the timing of current scheduled siege
+pendingsquad - Display lists of new members that joined chat.
+invitedsquad - Mark a member that have joined squad to remove from pendingsquad list.
