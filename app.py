@@ -101,7 +101,6 @@ def setsiege(update, context):
 
 def joinsiege(update, context):
     if check_chat(update.message.chat.id):
-        player_name = update.message.from_user.username
         if Siege.objects.count() > 0:
             siege = Siege.objects[0]
             siege_time = siege.time
@@ -109,7 +108,8 @@ def joinsiege(update, context):
                 if player.username == player_name:
                     update.message.reply_text("Already in siege.")
                     return
-            player = Player(username=player_name,time=siege_time, player_name= update.message.from_user.first_name)
+            player_username = update.message.from_user.username
+            player = Player(username=player_username,time=siege_time, player_name= update.message.from_user.first_name)
             player.save()
             update.message.reply_markdown(siegestatus())
         else:
