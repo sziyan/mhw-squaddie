@@ -49,11 +49,11 @@ logger = logging.getLogger(__name__)
 # context. Error handlers also receive the raised TelegramError object in error.
 
 def check_chat(id):
-    # if id == -1001336587845:
-    #     return True
-    # else:
-    #     return False
-    return True
+    if id == -1001336587845:
+        return True
+    else:
+        return False
+    # return True
 
 def siegestatus():
     if Siege.objects.count() > 0:
@@ -123,6 +123,8 @@ def joinsiege(update, context):
                             player = Player(username=player_username,time=siege_time, player_name=update.message.from_user.first_name)
                             player.save()
                             update.message.reply_html(siegestatus())
+                            db.close()
+                            return
                     else: #sender no username
                         if player_firstname == player.player_name: #sender already in list || check by firstname instead
                             update.message.reply_text("Already in siege.")
@@ -132,11 +134,15 @@ def joinsiege(update, context):
                             player = Player(username=player_username, time=siege_time, player_name=player_name)
                             player.save()
                             update.message.reply_html(siegestatus())
+                            db.close()
+                            return
             else: #no player object
                 player_username = update.message.from_user.username
                 player = Player(username=player_username, time=siege_time,player_name=update.message.from_user.first_name)
                 player.save()
                 update.message.reply_html(siegestatus())
+                db.close()
+                return
         else: #no siege
             update.message.reply_text("No siege scheduled at the moment.")
         db.close()
