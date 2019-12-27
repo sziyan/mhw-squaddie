@@ -21,8 +21,8 @@ from mongoengine import *
 from mongoengine import connect
 
 db = connect('sg', host="mongodb+srv://ndg:P%40ssw0rd@ndg-3djuk.gcp.mongodb.net/sg?retryWrites=true&w=majority")
-#TOKEN = '976932675:AAHRy9-sEEvbEfP8krrI2PkWESJmQADh888' #MHW Squaddie
-TOKEN = '180665590:AAGEXQVVWTzpou9TBekb8oq59cjz2Fxp_gY' #Ascension
+TOKEN = '976932675:AAHRy9-sEEvbEfP8krrI2PkWESJmQADh888' #MHW Squaddie
+#TOKEN = '180665590:AAGEXQVVWTzpou9TBekb8oq59cjz2Fxp_gY' #Ascension
 
 class Player(Document):
     username = StringField(max_length=200, required=False)
