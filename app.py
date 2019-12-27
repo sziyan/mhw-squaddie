@@ -20,7 +20,8 @@ import logging
 from mongoengine import *
 from mongoengine import connect
 
-db = connect('sg', host="mongodb+srv://ndg:P%40ssw0rd@ndg-3djuk.gcp.mongodb.net/sg?retryWrites=true&w=majority")
+db = connect('sg', host="mongodb+srv://ndg:P%40ssw0rd@ndg-3djuk.gcp.mongodb.net/sg?retryWrites=true&w=majority") #sg
+#db = connect('test', host="mongodb+srv://ndg:P%40ssw0rd@ndg-3djuk.gcp.mongodb.net/test?retryWrites=true&w=majority") #test
 TOKEN = '976932675:AAHRy9-sEEvbEfP8krrI2PkWESJmQADh888' #MHW Squaddie
 #TOKEN = '180665590:AAGEXQVVWTzpou9TBekb8oq59cjz2Fxp_gY' #Ascension
 
@@ -63,7 +64,11 @@ def siegestatus():
         index = 1
         if Player.objects.count() > 0:
             for player in Player.objects:
-                message = "{}. {} ({})".format(index, player.username, player.player_name)
+                if player.username is None:
+                    player_username = ""
+                else:
+                    player_username = player.username
+                message = "{}. {} ({})".format(index, player_username, player.player_name)
                 index += 1
                 players.append(message)
             players_list = "\n".join(players)
@@ -114,28 +119,27 @@ def joinsiege(update, context):
             player_username = update.message.from_user.username
             player_firstname = update.message.from_user.first_name
             if Player.objects.count() > 0: #at least 1 player in list
-                for player in Player.objects:
-                    if player_username is not None: #sender has username
-                        if player.username == player_username: # sender already in list
+                if player_username is not None:
+                    for player in Player.objects:
+                        if player_username == player.username:
                             update.message.reply_text("Already in siege. Type /checksiege for siege status.")
                             return
-                        else: #sender not in list
-                            player = Player(username=player_username,time=siege_time, player_name=update.message.from_user.first_name)
-                            player.save()
-                            update.message.reply_html(siegestatus())
-                            db.close()
-                            return
-                    else: #sender no username
-                        if player_firstname == player.player_name: #sender already in list || check by firstname instead
+                    player = Player(username=player_username, time=siege_time,player_name=player_firstname)
+                    player.save()
+                    update.message.reply_html(siegestatus())
+                    db.close()
+                    return
+                else: #sender no username
+                    for player in Player.objects:
+                        if player_firstname == player.player_name:
                             update.message.reply_text("Already in siege.")
                             return
-                        else: #sender not in list
-                            player_name = update.message.from_user.first_name
-                            player = Player(username=player_username, time=siege_time, player_name=player_name)
-                            player.save()
-                            update.message.reply_html(siegestatus())
-                            db.close()
-                            return
+                    player_name = update.message.from_user.first_name
+                    player = Player(username=player_username, time=siege_time, player_name=player_name)
+                    player.save()
+                    update.message.reply_html(siegestatus())
+                    db.close()
+                    return
             else: #no player object
                 player_username = update.message.from_user.username
                 player = Player(username=player_username, time=siege_time,player_name=update.message.from_user.first_name)
@@ -152,24 +156,25 @@ def leavesiege(update, context):
         if Siege.objects.count() > 0 and Player.objects.count() > 0:
             player_username = update.message.from_user.username
             player_name = update.message.from_user.first_name
-            for player in Player.objects:
-                if player.username is not None: #sender has username set
-                    if player_username == player.username: #if found username
+            if player_username is not None: #sender got username
+                for player in Player.objects:
+                    if player_username == player.username: #if can find username
                         player.delete()
                         update.message.reply_html('Left the siege. \n{}'.format(siegestatus()))
                         db.close()
                         return
-                    else: #cannot find username
-                        update.message.reply_text('You are not in any siege.')
-                else: #sender username not set
-                    if player_name == player.player_name:
+                update.message.reply_text('You are not in any siege.') #cant find username
+                return
+            else: #sender no username
+                for player in Player.objects:
+                    if player_name == player.player_name: #if can find first_name
                         player.delete()
                         update.message.reply_html('Left the siege. \n{}'.format(siegestatus()))
                         db.close()
                         return
-                    else:
-                        update.message.reply_text('You are not in any siege.')
-        else:
+                update.message.reply_text('You are not in any siege.') #cant find first name
+                return
+        else: #no siege or players count.
             update.message.reply_text('No siege scheduled.')
         db.close()
 
@@ -190,7 +195,8 @@ def deletesiege(update,context):
                 for player in Player.objects:
                     player.delete()
                 update.message.reply_text('Siege deleted. Type /setsiege <time> to schedule a new siege.')
-            update.message.reply_text("No players in siege to delete. Siege deleted.")
+            else:
+                update.message.reply_text("No players in siege to delete. Siege deleted.")
         else:
             update.message.reply_text("No siege to delete.")
         db.close()
