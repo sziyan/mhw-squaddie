@@ -15,12 +15,14 @@ Press Ctrl-C on the command line or send a signal to the process to stop the
 bot.
 """
 
+import random
 import logging
 from mongoengine import *
 from mongoengine import connect
 
 db = connect('sg', host="mongodb+srv://ndg:P%40ssw0rd@ndg-3djuk.gcp.mongodb.net/sg?retryWrites=true&w=majority")
-TOKEN = '976932675:AAHRy9-sEEvbEfP8krrI2PkWESJmQADh888'
+#TOKEN = '976932675:AAHRy9-sEEvbEfP8krrI2PkWESJmQADh888' #MHW Squaddie
+TOKEN = '180665590:AAGEXQVVWTzpou9TBekb8oq59cjz2Fxp_gY' #Ascension
 
 class Player(Document):
     username = StringField(max_length=200, required=False)
@@ -47,11 +49,11 @@ logger = logging.getLogger(__name__)
 # context. Error handlers also receive the raised TelegramError object in error.
 
 def check_chat(id):
-    if id == -1001336587845:
-        return True
-    else:
-        return False
-    # return True
+    # if id == -1001336587845:
+    #     return True
+    # else:
+    #     return False
+    return True
 
 def siegestatus():
     if Siege.objects.count() > 0:
@@ -207,14 +209,21 @@ def changetime(update, context):
         else:
             update.message.reply_text("No siege scheduled at the moment. \nUse /setsiege <time> to schedule a siege.")
 
+###### MEMBERS MANAGEMENT #######
 
 def new_member(update,context):
-    for member in update.message.new_chat_members:
-        newcomer = member.first_name
-        newplayer = NewPlayer(first_name=newcomer)
-        newplayer.save()
-        update.message.reply_html("Welcome {} to the group! \nCheck the pinned message to add your IGN for others to add you. \nEnjoy your hunts.".format(newcomer))
-        db.close()
+    if check_chat(update.message.chat.id):
+        for member in update.message.new_chat_members:
+            newcomer = member.first_name
+            newplayer = NewPlayer(first_name=newcomer)
+            newplayer.save()
+            welcome_list = ["Keep your palicoes! <b>{}</b> is here to hunt!!".format(newcomer),
+                            "<b>{}</b> is here to slay some Great Jagras!".format(newcomer),
+                            "Here comes <b>{}</b>, the Rajang sayer!".format(newcomer)]
+            index = random.randrange(0,len(welcome_list),1)
+            update.message.reply_html("{} \nP.S: Check the pinned message to add your IGN for others to add you.".format(welcome_list[index]))
+            db.close()
+
 
 def pendingsquad(update,context):
     if check_chat(update.message.chat.id):
@@ -226,7 +235,7 @@ def pendingsquad(update,context):
                 index += 1
                 new_players.append(message)
             msg = "\n".join(new_players)
-            update.message.reply_html("The following players just joined group and is pending to be added to squad: \n{}".format(msg))
+            update.message.reply_html("The following players just joined and is pending to be added to squad: \n{}".format(msg))
             db.close()
         else:
             update.message.reply_text("No pending members to join squad.")
