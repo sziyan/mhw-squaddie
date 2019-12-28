@@ -37,6 +37,10 @@ class Siege(Document):
 class NewPlayer(Document):
     first_name = StringField(max_length=200, required = False)
 
+class Session(Document):
+    session_id = StringField(max_length=200, required = True)
+
+
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
 # Enable logging
@@ -269,6 +273,45 @@ def invitedsquad(update, context):
         else:
             update.message.reply_text("No players in list to be added to squad.")
 
+####Session Management ####
+
+def session(update, context):
+    if check_chat(update.message.chat.id):
+        if Session.objects.count() == 0:
+            update.message.reply_text("No session created.")
+        else:
+            session_id = Session.objects[0].session_id
+            update.message.reply_html("<b>Session ID:</b> {}".format(session_id))
+            db.close()
+
+def addsession(update, context):
+    if check_chat(update.message.chat.id):
+        if len(context.args) == 0:
+            update.message.reply_text("Syntax is /addsession <session id>.")
+            return
+        if Session.objects.count() >= 1:
+            update.message.reply_text("There is already an existing session. \n Join that instead.")
+            return
+        else:
+            session_id = " ".join(context.args)
+            print(session_id)
+            session = Session(session_id=session_id)
+            session.save()
+            update.message.reply_html("<b>{}</b> added.".format(session_id))
+            db.close()
+
+def deletesession(update, context):
+    if check_chat(update.message.chat.id):
+        if Session.objects.count() == 0:
+            update.message.reply_text("No session to delete.")
+            db.close()
+            return
+        else:
+            for session in Session.objects:
+                session_id = session.session_id
+                session.delete()
+                update.message.reply_html("<b>{}</b> deleted.".format(session_id))
+            db.close()
 
 def error(update, context):
     """Log Errors caused by Updates."""
@@ -296,6 +339,9 @@ def main():
     dp.add_handler(CommandHandler('pendingsquad', pendingsquad))
     dp.add_handler(CommandHandler('invitedsquad', invitedsquad))
     dp.add_handler(CommandHandler('changetime', changetime))
+    dp.add_handler(CommandHandler('session', session))
+    dp.add_handler(CommandHandler('addsession', addsession))
+    dp.add_handler(CommandHandler('deletesession', deletesession))
 
     # on noncommand i.e message - echo the message on Telegram
     dp.add_handler(MessageHandler(Filters.status_update.new_chat_members, new_member))
