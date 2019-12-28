@@ -20,6 +20,7 @@ import logging
 from mongoengine import *
 from mongoengine import connect
 from time import gmtime, strftime
+import os
 
 
 db = connect('sg', host="mongodb+srv://ndg:P%40ssw0rd@ndg-3djuk.gcp.mongodb.net/sg?retryWrites=true&w=majority") #sg
@@ -130,6 +131,8 @@ def siegestatus():
 
 def help(update, context):
     """Send a message when the command /help is issued."""
+    os.environ['TZ'] = 'Singapore/Singapore'
+    time.tzset
     print(strftime("%z", gmtime()))
     update.message.reply_text('Help!')
 
@@ -151,7 +154,7 @@ def setsiege(update, context):
             return
         time = str((context.args[0]).upper())
         siege_id = Siege.objects.count() + 1
-        siege = Siege(siege_id=siege_id, time=time, players=[user], host=username)
+        siege = Siege(siege_id=siege_id, time=time, players=[user], host=player_name)
         siege.save()
         update.message.reply_html('Siege scheduled at <b>{}</b>. \n Use /joinsiege to indicate your interest!'.format(time))
         db.close()
