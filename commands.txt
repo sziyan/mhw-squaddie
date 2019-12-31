@@ -9,4 +9,4 @@ invitedsquad - Mark a member that have joined squad to remove from pendingsquad 
 session - Shows current squad session ID
 addsession - Adds current squad session ID
 deletesession - Removes squad session ID from list.
-youtube - Search with your search terms.
+youtube - Search youtube with your search terms.

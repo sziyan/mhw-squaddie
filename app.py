@@ -23,16 +23,15 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import MessageEntity
 import praw
 from youtube_api import YoutubeDataApi
+from config import Config
 
-api_key = 'AIzaSyDqeiZFoNLUkuLN7H3aMtG511cwd3Wkbr0'
+api_key = Config.API_KEY
 yt = YoutubeDataApi(api_key)
 
-reddit = praw.Reddit(user_agent="MHW-Squaddie Telegram Bot (by /u/lonerzboy)", client_id='kn_3nXzENsvUjQ', client_secret='1CLsrd4FIdoUEC0ga0tU4vuP-CM')
+reddit = praw.Reddit(user_agent="MHW-Squaddie Telegram Bot (by /u/lonerzboy)", client_id=Config.client_id, client_secret=Config.client_secret)
 
-db = connect('sg', host="mongodb+srv://ndg:P%40ssw0rd@ndg-3djuk.gcp.mongodb.net/sg?retryWrites=true&w=majority") #sg
-TOKEN = '976932675:AAHRy9-sEEvbEfP8krrI2PkWESJmQADh888' #MHW Squaddie
-# db = connect('test', host="mongodb+srv://ndg:P%40ssw0rd@ndg-3djuk.gcp.mongodb.net/test?retryWrites=true&w=majority") #test
-# TOKEN = '180665590:AAGEXQVVWTzpou9TBekb8oq59cjz2Fxp_gY' #Ascension
+db = connect('sg', host=Config.host) #sg
+TOKEN = Config.token #MHW Squaddie
 
 class Player(Document):
     username = StringField(max_length=200, required=False)
