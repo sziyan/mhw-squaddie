@@ -356,6 +356,7 @@ def youtube(update, context):
     if check_chat(update.message.chat.id):
         if len(context.args) == 0:
             update.message.reply_text('Syntax is /youtube <video to search>')
+            return
         query = " ".join(context.args)
         search = yt.search(q=query, max_results=1)
         if len(search) > 0:
