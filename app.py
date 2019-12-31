@@ -22,7 +22,10 @@ from mongoengine import connect
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import MessageEntity
 import praw
+from youtube_api import YoutubeDataApi
 
+api_key = 'AIzaSyDqeiZFoNLUkuLN7H3aMtG511cwd3Wkbr0'
+yt = YoutubeDataApi(api_key)
 
 reddit = praw.Reddit(user_agent="MHW-Squaddie Telegram Bot (by /u/lonerzboy)", client_id='kn_3nXzENsvUjQ', client_secret='1CLsrd4FIdoUEC0ga0tU4vuP-CM')
 
@@ -47,9 +50,6 @@ class NewPlayer(Document):
 
 class Session(Document):
     session_id = StringField(max_length=200, required = True)
-
-
-
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -98,10 +98,6 @@ def siegestatus():
         msg.append(msg_send)
     message = "\n".join(msg)
     return message
-
-def help(update, context):
-    """Send a message when the command /help is issued."""
-    update.message.reply_text('Help!')
 
 def setsiege(update, context):
     if check_chat(update.message.chat.id):
@@ -356,6 +352,27 @@ def reddit_link(update,context):
     else:
         return
 
+def youtube(update, context):
+    if check_chat(update.message.chat.id):
+        if len(context.args) == 0:
+            update.message.reply_text('Syntax is /youtube <video to search>')
+        query = " ".join(context.args)
+        search = yt.search(q=query, max_results=1)
+        if len(search) > 0:
+            video_id = search[0].get('video_id')
+            channel = search[0].get('channel_title')
+            video_link = 'https://www.youtube.com/watch?v={}'.format(video_id)
+            message = '<b>Search Terms:</b> {} \n<b>Uploaded by:</b> {} \n\n{}'.format(query, channel, video_link)
+            update.message.reply_html(message)
+        else:
+            update.message.reply("Unable to find any youtube video.")
+
+
+def help(update, context):
+    """Send a message when the command /help is issued."""
+    update.message.reply_text('Help!')
+
+
 def error(update, context):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, context.error)
@@ -385,6 +402,7 @@ def main():
     dp.add_handler(CommandHandler('session', session))
     dp.add_handler(CommandHandler('addsession', addsession))
     dp.add_handler(CommandHandler('deletesession', deletesession))
+    dp.add_handler(CommandHandler('youtube', youtube))
 
     # on noncommand i.e message - echo the message on Telegram
     dp.add_handler(MessageHandler(Filters.status_update.new_chat_members, new_member))
