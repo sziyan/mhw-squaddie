@@ -19,9 +19,12 @@ import random
 import logging
 from mongoengine import *
 from mongoengine import connect
-from time import gmtime, strftime
-import os
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram import MessageEntity
+import praw
 
+
+reddit = praw.Reddit(user_agent="MHW-Squaddie Telegram Bot (by /u/lonerzboy)", client_id='kn_3nXzENsvUjQ', client_secret='1CLsrd4FIdoUEC0ga0tU4vuP-CM')
 
 db = connect('sg', host="mongodb+srv://ndg:P%40ssw0rd@ndg-3djuk.gcp.mongodb.net/sg?retryWrites=true&w=majority") #sg
 TOKEN = '976932675:AAHRy9-sEEvbEfP8krrI2PkWESJmQADh888' #MHW Squaddie
@@ -46,7 +49,7 @@ class Session(Document):
     session_id = StringField(max_length=200, required = True)
 
 
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -59,11 +62,11 @@ logger = logging.getLogger(__name__)
 # context. Error handlers also receive the raised TelegramError object in error.
 
 def check_chat(id):
-    # if id == -1001336587845:
-    #     return True
-    # else:
-    #     return False
-    return True
+    if id == -1001336587845:
+        return True
+    else:
+        return False
+    # return True
 
 def siegestatus():
     msg = []
@@ -96,48 +99,8 @@ def siegestatus():
     message = "\n".join(msg)
     return message
 
-
-            # if Player.objects.count() > 0:
-            #     siege_players = Player.objects(siege_id=siege_id)
-            #     players = []
-            #     for player in siege_players:
-            #         if player.username is None:
-            #             player_username = ""
-            #         else:
-            #             player_username = player.username
-            #         message = "{}. {} ({})".format(index, player_username, player.player_name)
-            #         if (index % 4) == 1:
-            #             players.append("")
-            #         index += 1
-            #         players.append(message)
-            #     players_list = "\n".join(players)
-            #     msg_send = "<b>Siege ID:</b> {} \n<b>Siege time:</b> {} (GMT +8) \n<b>Players:</b> {} \n{}".format(siege.siege_id, siege.time, Player.objects.count(),players_list)
-            #     msg.append(msg_send)
-            # else:
-            #     msg_send = "<b>Siege ID:</b> {} \n<b>Siege time:</b> {} (GMT +8) \n<b>Players:</b> 0 \nNo players is siege.".format(
-            #         siege.siege_id, siege.time)
-            #     msg.append(msg_send)
-    #
-    # else:
-    #     msg_send = 'No siege scheduled at the moment.'
-    #     msg.append(msg_send)
-    # db.close()
-    # msg = "\n".join(msg)
-    # return msg
-
-# def start(update, context):
-#     """Send a message when the command /start is issued."""
-#     chat_id = update.message.chat.id
-#     user_id = update.message.from_user.id
-#     admin = updater.getChatMember(chat_id,user_id).status
-#     update.message.reply_text(admin)
-
-
 def help(update, context):
     """Send a message when the command /help is issued."""
-    os.environ['TZ'] = 'Singapore/Singapore'
-    time.tzset
-    print(strftime("%z", gmtime()))
     update.message.reply_text('Help!')
 
 def setsiege(update, context):
@@ -201,42 +164,6 @@ def joinsiege(update, context):
 
         db.close()
 
-
-        #     player_username = update.message.from_user.username
-        #     player_firstname = update.message.from_user.first_name
-        #     if Player.objects.count() > 0: #at least 1 player in list
-        #         if player_username is not None:
-        #             for player in Player.objects:
-        #                 if player_username == player.username:
-        #                     update.message.reply_text("Already in siege. Type /checksiege for siege status.")
-        #                     return
-        #             player = Player(username=player_username, time=siege_time,player_name=player_firstname)
-        #             player.save()
-        #             update.message.reply_html(siegestatus())
-        #             db.close()
-        #             return
-        #         else: #sender no username
-        #             for player in Player.objects:
-        #                 if player_firstname == player.player_name:
-        #                     update.message.reply_text("Already in siege.")
-        #                     return
-        #             player_name = update.message.from_user.first_name
-        #             player = Player(username=player_username, time=siege_time, player_name=player_name)
-        #             player.save()
-        #             update.message.reply_html(siegestatus())
-        #             db.close()
-        #             return
-        #     else: #no player object
-        #         player_username = update.message.from_user.username
-        #         player = Player(username=player_username, time=siege_time,player_name=update.message.from_user.first_name)
-        #         player.save()
-        #         update.message.reply_html(siegestatus())
-        #         db.close()
-        #         return
-        # else: #no siege
-        #     update.message.reply_text("No siege scheduled at the moment.")
-        # db.close()
-
 def leavesiege(update, context):
     if check_chat(update.message.chat.id):
         if Siege.objects.count() > 0:
@@ -274,30 +201,6 @@ def leavesiege(update, context):
         else:
             update.message.reply_text("No siege scheduled")
         db.close()
-
-        #     player_username = update.message.from_user.username
-        #     player_name = update.message.from_user.first_name
-        #     if player_username is not None: #sender got username
-        #         for player in Player.objects:
-        #             if player_username == player.username: #if can find username
-        #                 player.delete()
-        #                 update.message.reply_html('Left the siege. \n{}'.format(siegestatus()))
-        #                 db.close()
-        #                 return
-        #         update.message.reply_text('You are not in any siege.') #cant find username
-        #         return
-        #     else: #sender no username
-        #         for player in Player.objects:
-        #             if player_name == player.player_name: #if can find first_name
-        #                 player.delete()
-        #                 update.message.reply_html('Left the siege. \n{}'.format(siegestatus()))
-        #                 db.close()
-        #                 return
-        #         update.message.reply_text('You are not in any siege.') #cant find first name
-        #         return
-        # else: #no siege or players count.
-        #     update.message.reply_text('No siege scheduled.')
-        # db.close()
 
 def checksiege(update, context):
     if check_chat(update.message.chat.id):
@@ -436,6 +339,23 @@ def deletesession(update, context):
                 update.message.reply_html("<b>{}</b> deleted.".format(session_id))
             db.close()
 
+#Additional features
+
+def reddit_link(update,context):
+    text = update.message.text.split("/")
+    if text.index('comments') > 0:
+        submission_index = text.index('comments')+1
+    else:
+        return
+    submission_id = text[submission_index]
+    submission = reddit.submission(submission_id)
+    if submission.selftext:
+        submission_text = submission.selftext.split(" ")
+        submission_reply = " ".join(submission_text[0:100])
+        update.message.reply_html("<b>Summary(100 words):</b> \n\n{}".format(submission_reply))
+    else:
+        return
+
 def error(update, context):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, context.error)
@@ -468,6 +388,7 @@ def main():
 
     # on noncommand i.e message - echo the message on Telegram
     dp.add_handler(MessageHandler(Filters.status_update.new_chat_members, new_member))
+    dp.add_handler(MessageHandler(Filters.text & (Filters.entity(MessageEntity.URL) | Filters.entity(MessageEntity.TEXT_LINK)),reddit_link))
 
     # log all errors
     dp.add_error_handler(error)
