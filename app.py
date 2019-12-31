@@ -339,7 +339,7 @@ def deletesession(update, context):
 
 def reddit_link(update,context):
     text = update.message.text.split("/")
-    if text.index('comments') > 0:
+    if 'comments' in text and text.index('comments') > 0:
         submission_index = text.index('comments')+1
     else:
         return
