@@ -25,13 +25,18 @@ import praw
 from youtube_api import YoutubeDataApi
 from config import Config
 
+logging.basicConfig(level=logging.INFO, filename='output.log', filemode='a', format='%(asctime)s %(levelname)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
+logging.info("Bot started succesfully.")
 api_key = Config.API_KEY
 yt = YoutubeDataApi(api_key)
 
 reddit = praw.Reddit(user_agent="MHW-Squaddie Telegram Bot (by /u/lonerzboy)", client_id=Config.client_id, client_secret=Config.client_secret)
+logging.info("PRAW instantiated successfully.")
 
-db = connect('sg', host=Config.host) #sg
-TOKEN = Config.token #MHW Squaddie
+db = connect('sg', host=Config.host)
+TOKEN = Config.token
+
+
 
 class Player(Document):
     username = StringField(max_length=200, required=False)
@@ -384,7 +389,8 @@ def main():
     # Make sure to set use_context=True to use the new context based callbacks
     # Post version 12 this will no longer be necessary
     updater = Updater(TOKEN, use_context=True)
-
+    logging.info("Waiting for commands..")
+    
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
 
