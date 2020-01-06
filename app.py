@@ -24,6 +24,7 @@ from telegram import MessageEntity
 import praw
 from youtube_api import YoutubeDataApi
 from config import Config
+from datetime import datetime
 
 logging.basicConfig(level=logging.INFO, filename='output.log', filemode='a', format='%(asctime)s %(levelname)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 logging.info("Bot started succesfully.")
@@ -55,6 +56,13 @@ class NewPlayer(Document):
 class Session(Document):
     session_id = StringField(max_length=200, required = True)
 
+class Event(Document):
+    event_id = IntField(min_value=1, required=True)
+    time = StringField(max_length=200, required=True)
+    description = StringField(required=False)
+    players = ListField(ReferenceField(Player))
+    host = StringField(max_length=200, required=True)
+
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -66,11 +74,11 @@ logger = logging.getLogger(__name__)
 # context. Error handlers also receive the raised TelegramError object in error.
 
 def check_chat(id):
-    if id == -1001336587845:
-        return True
-    else:
-        return False
-    # return True
+    # if id == -1001336587845:
+    #     return True
+    # else:
+    #     return False
+    return True
 
 def siegestatus():
     msg = []
@@ -103,6 +111,37 @@ def siegestatus():
     message = "\n".join(msg)
     return message
 
+def eventstatus():
+    msg = []
+    if Event.objects.count() > 0:
+        event_list=[]
+        for event in Event.objects:
+            event_id = event.event_id
+            event_list.append(event_id)
+            event_list.sort()
+        for i in event_list:
+            event = Event.objects(event_id=i)
+            player_list = event.players
+            players = []
+            if len(player_list) > 0:
+                for player in player_list:
+                    username = player.username
+                    player_name = player.player_name
+                    message = "{} ({})".format(username, player_name)
+                    players.append(message)
+                players_message = "\n".join(players)
+                msg_send = "<b>Event ID:</b> {} \n<b>Description: </b>{} \n<b>Event time:</b> {} (GMT +8) \n<b>Started By:</b> {} \n<b>Players:</b> {} \n{}".format(event.event_id, event.description ,event.time, event.host, len(player_list),players_message)
+                msg.append(msg_send)
+            else:
+                msg_send = "<b>Event ID:</b> {} \n<b>Description: </b>{} \n<b>Event time:</b> {} (GMT +8) \n<b>Players:</b> 0 \nNo players in siege.".format(event.event_id, event.description,event.time)
+                msg.append(msg_send)
+            msg.append("")
+    else:
+        msg_send = "No event planned."
+        msg.append(msg_send)
+    message = "\n".join(msg)
+    return message
+
 def setsiege(update, context):
     if check_chat(update.message.chat.id):
         username = update.message.from_user.username
@@ -119,8 +158,34 @@ def setsiege(update, context):
         if len(context.args) == 0:
             update.message.reply_text('Command syntax is /setsiege <time>')
             return
-        time = str((context.args[0]).upper())
-        siege_id = Siege.objects.count() + 1
+        try:
+            if '.' in context.args[0]:
+                time_in_datetime = datetime.strptime(context.args[0], '%I.%M%p')
+                time = time_in_datetime.strftime('%I.%M%p').lstrip('0')
+            else:
+                time_in_datetime = datetime.strptime(context.args[0], '%I%p')
+                time = time_in_datetime.strftime('%I%p').lstrip('0')
+        except ValueError:
+            update.message.reply_text('Invalid time format.')
+            return
+        if Siege.objects.count() == 0:
+            siege_id = 1
+        else:
+            siege_id_list = []
+            start_count =1
+            for siege in Siege.objects():
+                siege_id_list.append(siege.siege_id)
+            siege_id_list.sort()
+            for i in siege_id_list:
+                if start_count == i: #already exist
+                    start_count +=1
+                else:
+                    siege_id = start_count
+            if start_count > len(siege_id_list):
+                siege_id = start_count
+
+
+        #siege_id = Siege.objects.count() + 1
         siege = Siege(siege_id=siege_id, time=time, players=[user], host=player_name)
         siege.save()
         update.message.reply_html('Siege scheduled at <b>{}</b>. \n Use /joinsiege to indicate your interest!'.format(time))
@@ -251,6 +316,129 @@ def changetime(update, context):
         else:
             update.message.reply_text("No siege scheduled at the moment. \nUse /setsiege <time> to schedule a siege.")
 
+####Events######
+
+def addevent(update, context):
+    if check_chat(update.message.chat.id):
+        username = update.message.from_user.username
+        player_name = update.message.from_user.first_name
+        if username is None:
+            update.message.reply_text("Kindly create a Telegram username first before joining event.")
+            return
+        else:
+            if not Player.objects(username=username):
+                user = Player(username=username, player_name=player_name)
+                user.save()
+            else:
+                user = Player.objects(username=username)[0]
+        if len(context.args) == 0:
+            update.message.reply_text('Command syntax is /addevent <time>,<description')
+            return
+        message = update.message.text[10:].split(',')
+        if len(message) !=2:
+            update.message.reply_text('Missing time or description. \nCommand syntax is /addevent <time>,<description')
+            return
+        try:
+            if '.' in message[0]:
+                time_in_datetime = datetime.strptime(message[0], '%I.%M%p')
+                time = time_in_datetime.strftime('%I.%M%p').lstrip('0')
+            else:
+                time_in_datetime = datetime.strptime(message[0], '%I%p')
+                time = time_in_datetime.strftime('%I%p').lstrip('0')
+        except ValueError:
+            update.message.reply_text('Invalid time format.')
+            return
+        description = message[1]
+        if Event.objects.count() == 0:
+            event_id = 1
+        else:
+            event_id_list = []
+            start_count =1
+            for event in Event.objects():
+                event_id_list.append(event.event_id)
+            event_id_list.sort()
+            for i in event_id_list:
+                if start_count == i: #already exist
+                    start_count +=1
+                else:
+                    event_id = start_count
+            if start_count > len(event_id_list):
+                event_id = start_count
+
+        event = Event(event_id=event_id, time=time,description=description, players=[user], host=player_name)
+        event.save()
+        update.message.reply_html('Event created at <b>{}</b>. \n Use /joinevent to indicate your interest!'.format(time))
+        db.close()
+
+def joinevent(update, context):
+    if check_chat(update.message.chat.id):
+        username = update.message.from_user.username
+        player_name = update.message.from_user.first_name
+        if username is None:
+            update.message.reply_text("Kindly create a Telegram username first before joining siege.")
+            return
+        else:
+            if not Player.objects(username=username):
+                user = Player(username=username, player_name=player_name)
+                user.save()
+            else:
+                user = Player.objects(username=username)[0]
+        if Event.objects.count() > 0:
+            if len(context.args) == 0:
+                id_join = 1
+            else:
+                id_join = int(context.args[0])
+            if not Event.objects(event_id=id_join):
+                if id_join == 1:
+                    update.message.reply_text("Event 1 is not active. \nPlease select event ID to join.")
+                else:
+                    update.message.reply_text("Invalid event ID")
+                db.close()
+                return
+            event = Event.objects(event_id=id_join)[0]
+            player_list = event.players
+            for players in player_list:
+                if players.username == username:
+                    update.message.reply_html("Already in event. Type /checkevent for event status.")
+                    return
+            if len(player_list) >= 4:
+                update.message.reply_html("Max number of players(4) already in event.")
+            Event.objects(event_id=id_join).update_one(push__players=user)
+            update.message.reply_html(siegestatus())
+        else:
+            update.reply_text("No event created.")
+
+        db.close()
+
+def deleteevent(update,context):
+    if check_chat(update.message.chat.id):
+        if Event.objects.count() > 0:
+            if len(context.args) == 0:
+                to_delete = 1
+            else:
+                to_delete = int(context.args[0])
+            if not Event.objects(event_id=to_delete):
+                if to_delete == 1:
+                    update.message.reply_text("Event 1 is not active. \nPlease select event ID to delete.")
+                else:
+                    update.message.reply_text("Invalid event ID")
+                db.close()
+                return
+            event = Event.objects(event_id=to_delete)[0]
+            event.delete()
+            update.message.reply_html('Event ID <b>{}</b> deleted. Type /addevent to plan a new event.'.format(to_delete))
+        else:
+            update.message.reply_text("No event to delete.")
+        db.close()
+
+def checkevent(update, context):
+    if check_chat(update.message.chat.id):
+        if Event.objects.count() > 0:
+            update.message.reply_html(eventstatus())
+        else:
+            update.message.reply_text("No event planned at the moment.")
+        db.close()
+
 ###### MEMBERS MANAGEMENT #######
 
 def new_member(update,context):
@@ -261,9 +449,9 @@ def new_member(update,context):
             newplayer.save()
             welcome_list = ["Keep your palicoes! <b>{}</b> is here to hunt!!".format(newcomer),
                             "<b>{}</b> is here to slay some Great Jagras!".format(newcomer),
-                            "Here comes <b>{}</b>, the Rajang sayer!".format(newcomer)]
+                            "Here comes <b>{}</b>, the Rajang slayer!".format(newcomer)]
             index = random.randrange(0,len(welcome_list),1)
-            update.message.reply_html("{} \nP.S: Check the pinned message to add your IGN for others to add you.".format(welcome_list[index]))
+            update.message.reply_html("{} \nPsst! Check the pinned message to add your IGN for others to add you.".format(welcome_list[index]))
             db.close()
 
 
@@ -390,7 +578,7 @@ def main():
     # Post version 12 this will no longer be necessary
     updater = Updater(TOKEN, use_context=True)
     logging.info("Waiting for commands..")
-    
+
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
 
@@ -409,6 +597,10 @@ def main():
     dp.add_handler(CommandHandler('addsession', addsession))
     dp.add_handler(CommandHandler('deletesession', deletesession))
     dp.add_handler(CommandHandler('youtube', youtube))
+    dp.add_handler(CommandHandler('addevent', addevent))
+    dp.add_handler(CommandHandler('joinevent', joinevent))
+    dp.add_handler(CommandHandler('deleteevent', deleteevent))
+    dp.add_handler(CommandHandler('checkevent', checkevent))
 
     # on noncommand i.e message - echo the message on Telegram
     dp.add_handler(MessageHandler(Filters.status_update.new_chat_members, new_member))
