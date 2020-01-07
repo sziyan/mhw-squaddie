@@ -337,21 +337,28 @@ def addevent(update, context):
         if len(context.args) == 0:
             update.message.reply_text('Command syntax is /addevent <time>,<description')
             return
-        message = update.message.text[10:].split(',')
-        if len(message) !=2:
+        space_index = update.message.text.find(" ") #get the index after command
+        input_message = update.message.text[space_index+1:] #the message we interested in
+        time = input_message.split(',')[0].strip() #the first part of the message which is time
+        message = input_message.split(',') #number of elements in the message
+        if "," in time:
+            time = time.replace(",", "")
+
+        if len(message) < 2:
             update.message.reply_text('Missing time or description. \nCommand syntax is /addevent <time>,<description')
             return
         try:
-            if '.' in message[0]:
-                time_in_datetime = datetime.strptime(message[0], '%I.%M%p')
+            if '.' in time:
+                time_in_datetime = datetime.strptime(time, '%I.%M%p')
                 time = time_in_datetime.strftime('%I.%M%p').lstrip('0')
             else:
-                time_in_datetime = datetime.strptime(message[0], '%I%p')
+                time_in_datetime = datetime.strptime(time, '%I%p')
                 time = time_in_datetime.strftime('%I%p').lstrip('0')
         except ValueError:
             update.message.reply_text('Invalid time format.')
             return
-        description = message[1]
+        second_part_msg_index = input_message.find(',')
+        description = input_message[second_part_msg_index+1:]
         if Event.objects.count() == 0:
             event_id = 1
         else:
