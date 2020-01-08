@@ -414,7 +414,7 @@ def joinevent(update, context):
             if len(player_list) >= 4:
                 update.message.reply_html("Max number of players(4) already in event.")
             Event.objects(event_id=id_join).update_one(push__players=user)
-            update.message.reply_html(siegestatus())
+            update.message.reply_html(eventstatus())
         else:
             update.reply_text("No event created.")
 
