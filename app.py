@@ -42,6 +42,7 @@ TOKEN = Config.token
 class Player(Document):
     username = StringField(max_length=200, required=False)
     player_name = StringField(max_length=200, required=False)
+    user_id = IntField(required=False)
 
 class Siege(Document):
     siege_id = IntField(min_value=1, required=True)
@@ -375,6 +376,7 @@ def addevent(update, context):
             if start_count > len(event_id_list):
                 event_id = start_count
 
+
         event = Event(event_id=event_id, time=time,description=description, players=[user], host=player_name)
         event.save()
         update.message.reply_html('Event created at <b>{}</b>. \n Use /joinevent to indicate your interest!'.format(time))
@@ -497,9 +499,11 @@ def new_member(update,context):
             newplayer.save()
             welcome_list = ["Keep your palicoes! <b>{}</b> is here to hunt!!".format(newcomer),
                             "<b>{}</b> is here to slay some Great Jagras!".format(newcomer),
-                            "Here comes <b>{}</b>, the Rajang slayer!".format(newcomer)]
+                            "Here comes <b>{}</b>, the Rajang slayer!".format(newcomer),
+                            "I see you're someone of culture as well. Welcome <b>{}</b> to the Gathering Hall."]
             index = random.randrange(0,len(welcome_list),1)
-            update.message.reply_html("{} \nPsst! Check the pinned message to add your IGN for others to add you.".format(welcome_list[index]))
+            update.message.reply_html("{} \nPsst! Add your PSN ID & IGN <a href='https://docs.google.com/spreadsheets/d/1BOgecU-LdpHjZX_ruCRqoWgfzea-WTT9zYSnzmNzauA/edit#gid=0'>here</a> so that we may add you.\n"
+                                      "Tag @@zacharylky or @@bloodychaos for invitation to squad.".format(welcome_list[index]))
             db.close()
 
 
@@ -534,6 +538,19 @@ def invitedsquad(update, context):
             update.message.reply_text("Username not found.")
         else:
             update.message.reply_text("No players in list to be added to squad.")
+
+def member_left(update,context):
+    if check_chat(update.message.chat.id):
+        member = update.message.left_chat_member
+        first_name = member.first_name
+        last_name = member.last_name
+        name = first_name + ' ' + last_name
+        byebye_list = ["Sadly, our comrade <b>{}</b> has left".format(name),
+                        "Its..its not like I wanted <b>{}</b> to stay or anything!".format(name),
+                        "<b>{}</b> has fallen to Rajang.".format(name)]
+        index = random.randrange(0, len(byebye_list), 1)
+        update.message.reply_html("{}".format(byebye_list[index]))
+
 
 ####Session Management ####
 
@@ -608,6 +625,9 @@ def youtube(update, context):
         else:
             update.message.reply("Unable to find any youtube video.")
 
+def googledocs(update,context):
+    if check_chat(update.message.chat.id):
+        update.message.reply_html('<a href="https://docs.google.com/spreadsheets/d/1BOgecU-LdpHjZX_ruCRqoWgfzea-WTT9zYSnzmNzauA/edit#gid=0">Google Spreadsheet Link</a>')
 
 def help(update, context):
     """Send a message when the command /help is issued."""
@@ -650,10 +670,12 @@ def main():
     dp.add_handler(CommandHandler('deleteevent', deleteevent))
     dp.add_handler(CommandHandler('checkevent', checkevent))
     dp.add_handler(CommandHandler('leaveevent', leaveevent))
+    dp.add_handler(CommandHandler('googledocs', googledocs()))
 
     # on noncommand i.e message - echo the message on Telegram
     dp.add_handler(MessageHandler(Filters.status_update.new_chat_members, new_member))
     dp.add_handler(MessageHandler(Filters.text & (Filters.entity(MessageEntity.URL) | Filters.entity(MessageEntity.TEXT_LINK)),reddit_link))
+    dp.add_handler(MessageHandler(Filters.status_update.left_chat_member, member_left))
 
     # log all errors
     dp.add_error_handler(error)
