@@ -670,7 +670,7 @@ def main():
     dp.add_handler(CommandHandler('deleteevent', deleteevent))
     dp.add_handler(CommandHandler('checkevent', checkevent))
     dp.add_handler(CommandHandler('leaveevent', leaveevent))
-    dp.add_handler(CommandHandler('googledocs', googledocs()))
+    dp.add_handler(CommandHandler('googledocs', googledocs))
 
     # on noncommand i.e message - echo the message on Telegram
     dp.add_handler(MessageHandler(Filters.status_update.new_chat_members, new_member))
