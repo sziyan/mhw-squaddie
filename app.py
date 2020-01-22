@@ -22,14 +22,13 @@ from mongoengine import connect
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import MessageEntity
 import praw
-from youtube_api import YoutubeDataApi
 from config import Config
 from datetime import datetime
 
 logging.basicConfig(level=logging.INFO, filename='output.log', filemode='a', format='%(asctime)s %(levelname)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 logging.info("Bot started succesfully.")
 api_key = Config.API_KEY
-yt = YoutubeDataApi(api_key)
+#yt = YoutubeDataApi(api_key)
 
 reddit = praw.Reddit(user_agent="MHW-Squaddie Telegram Bot (by /u/lonerzboy)", client_id=Config.client_id, client_secret=Config.client_secret)
 logging.info("PRAW instantiated successfully.")
@@ -170,7 +169,7 @@ def setsiege(update, context):
                 time_in_datetime = datetime.strptime(context.args[0], '%I%p')
                 time = time_in_datetime.strftime('%I%p').lstrip('0')
         except ValueError:
-            update.message.reply_text('Invalid time format.')
+            update.message.reply_text('Invalid time format. Syntax is /setsiege <time>')
             return
         if Siege.objects.count() == 0:
             siege_id = 1
@@ -346,7 +345,7 @@ def addevent(update, context):
             time = time.replace(",", "")
 
         if len(message) < 2:
-            update.message.reply_text('Missing time or description. \nCommand syntax is /addevent <time>,<description')
+            update.message.reply_text('Missing time or description. \nCommand syntax is /addevent <time>,<description>')
             return
         try:
             if '.' in time:
@@ -356,7 +355,7 @@ def addevent(update, context):
                 time_in_datetime = datetime.strptime(time, '%I%p')
                 time = time_in_datetime.strftime('%I%p').lstrip('0')
         except ValueError:
-            update.message.reply_text('Invalid time format.')
+            update.message.reply_text('Invalid time format. Syntax is /addevent <time>,<description>')
             return
         second_part_msg_index = input_message.find(',')
         description = input_message[second_part_msg_index+1:]
@@ -495,16 +494,16 @@ def new_member(update,context):
     if check_chat(update.message.chat.id):
         for member in update.message.new_chat_members:
             newcomer = member.first_name
-            newplayer = NewPlayer(first_name=newcomer)
-            newplayer.save()
+            # newplayer = NewPlayer(first_name=newcomer)
+            # newplayer.save()
             welcome_list = ["Keep your palicoes! <b>{}</b> is here to hunt!!".format(newcomer),
                             "<b>{}</b> is here to slay some Great Jagras!".format(newcomer),
                             "Here comes <b>{}</b>, the Rajang slayer!".format(newcomer),
-                            "I see you're someone of culture as well. Welcome <b>{}</b> to the Gathering Hall."]
+                            "I see you're of culture as well. Welcome <b>{}</b> to the Gathering Hall.".format(newcomer)]
             index = random.randrange(0,len(welcome_list),1)
-            update.message.reply_html("{} \nPsst! Add your PSN ID & IGN <a href='https://docs.google.com/spreadsheets/d/1BOgecU-LdpHjZX_ruCRqoWgfzea-WTT9zYSnzmNzauA/edit#gid=0'>here</a> so that we may add you.\n"
-                                      "Tag @@zacharylky or @@bloodychaos for invitation to squad.".format(welcome_list[index]))
-            db.close()
+            update.message.reply_html("{} \nPsst! Add your PSN ID & IGN <a href='https://docs.google.com/spreadsheets/d/1BOgecU-LdpHjZX_ruCRqoWgfzea-WTT9zYSnzmNzauA/edit#gid=0'>here</a> so that we can add you.\n"
+                                      "Tag @zacharylky or @bloodychaos for invitation to squad.".format(welcome_list[index]))
+            # db.close()
 
 
 def pendingsquad(update,context):
@@ -549,6 +548,7 @@ def member_left(update,context):
                         "Its..its not like I wanted <b>{}</b> to stay or anything!".format(name),
                         "<b>{}</b> has fallen to Rajang.".format(name)]
         index = random.randrange(0, len(byebye_list), 1)
+        logging.info("{} had left the chat group.".format(name))
         update.message.reply_html("{}".format(byebye_list[index]))
 
 
@@ -609,21 +609,21 @@ def reddit_link(update,context):
     else:
         return
 
-def youtube(update, context):
-    if check_chat(update.message.chat.id):
-        if len(context.args) == 0:
-            update.message.reply_text('Syntax is /youtube <video to search>')
-            return
-        query = " ".join(context.args)
-        search = yt.search(q=query, max_results=1)
-        if len(search) > 0:
-            video_id = search[0].get('video_id')
-            channel = search[0].get('channel_title')
-            video_link = 'https://www.youtube.com/watch?v={}'.format(video_id)
-            message = '<b>Search Terms:</b> {} \n<b>Uploaded by:</b> {} \n\n{}'.format(query, channel, video_link)
-            update.message.reply_html(message)
-        else:
-            update.message.reply("Unable to find any youtube video.")
+# def youtube(update, context):
+#     if check_chat(update.message.chat.id):
+#         if len(context.args) == 0:
+#             update.message.reply_text('Syntax is /youtube <video to search>')
+#             return
+#         query = " ".join(context.args)
+#         search = yt.search(q=query, max_results=1)
+#         if len(search) > 0:
+#             video_id = search[0].get('video_id')
+#             channel = search[0].get('channel_title')
+#             video_link = 'https://www.youtube.com/watch?v={}'.format(video_id)
+#             message = '<b>Search Terms:</b> {} \n<b>Uploaded by:</b> {} \n\n{}'.format(query, channel, video_link)
+#             update.message.reply_html(message)
+#         else:
+#             update.message.reply("Unable to find any youtube video.")
 
 def googledocs(update,context):
     if check_chat(update.message.chat.id):
@@ -664,7 +664,7 @@ def main():
     dp.add_handler(CommandHandler('session', session))
     dp.add_handler(CommandHandler('addsession', addsession))
     dp.add_handler(CommandHandler('deletesession', deletesession))
-    dp.add_handler(CommandHandler('youtube', youtube))
+    #dp.add_handler(CommandHandler('youtube', youtube))
     dp.add_handler(CommandHandler('addevent', addevent))
     dp.add_handler(CommandHandler('joinevent', joinevent))
     dp.add_handler(CommandHandler('deleteevent', deleteevent))

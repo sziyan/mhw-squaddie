@@ -4,9 +4,11 @@ leavesiege - Leave a scheduled siege.
 checksiege - Check the status of current scheduled siege.
 deletesiege - Delete current scheduled siege.
 changetime - Change the timing of current scheduled siege
-pendingsquad - Display lists of new members that joined chat.
-invitedsquad - Mark a member that have joined squad to remove from pendingsquad list.
+addevent - Add a planned event.
+joinevent - Join 1 of the planned event.
+leaveevent - Leave 1 of the planned event.
+deleteevent - Delete 1 of the planned event.
 session - Shows current squad session ID
 addsession - Adds current squad session ID
 deletesession - Removes squad session ID from list.
-youtube - Search youtube with your search terms.
+
