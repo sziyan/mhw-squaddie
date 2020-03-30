@@ -498,11 +498,13 @@ def new_member(update,context):
             # newplayer.save()
             welcome_list = ["Keep your palicoes! <b>{}</b> is here to hunt!!".format(newcomer),
                             "<b>{}</b> is here to slay some Great Jagras!".format(newcomer),
-                            "Here comes <b>{}</b>, the Rajang slayer!".format(newcomer),
-                            "I see you're of culture as well. Welcome <b>{}</b> to the Gathering Hall.".format(newcomer)]
+                            "Here comes <b>{}</b>, the Rajang(ahem Rajunk) slayer!".format(newcomer),
+                            "Welcome <b>{}</b> to the Gathering Hall.".format(newcomer),
+                            "Thank the Elder dragons. <b>{}</b> is here to save us from Safi'jiiva!".format(newcomer),
+                            "<b>{}</b> is here to cook us some raw meat.".format(newcomer)]
             index = random.randrange(0,len(welcome_list),1)
-            update.message.reply_html("{} \nPsst! Add your PSN ID & IGN <a href='https://docs.google.com/spreadsheets/d/1BOgecU-LdpHjZX_ruCRqoWgfzea-WTT9zYSnzmNzauA/edit#gid=0'>here</a> so that we can add you.\n"
-                                      "Tag @zacharylky or @bloodychaos for invitation to squad.".format(welcome_list[index]))
+            update.message.reply_html("{} \nAdd your PSN ID & IGN <a href='https://docs.google.com/spreadsheets/d/1BOgecU-LdpHjZX_ruCRqoWgfzea-WTT9zYSnzmNzauA/edit#gid=0'>here</a>.\n"
+                                      "Tag @zacharylky or @bloodychaos for invitation to squad. Party up and have fun hunting!".format(welcome_list[index]))
             # db.close()
 
 
