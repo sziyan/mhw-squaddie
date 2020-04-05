@@ -488,6 +488,10 @@ def checkevent(update, context):
             update.message.reply_text("No event planned at the moment.")
         db.close()
 
+def rules(update, context):
+    if check_chat(update.message.chat.id):
+        update.message.reply_html("Read the rules <a href='https://telegra.ph/Rules-and-Community-Guidelines-04-05'>here.</a>")
+
 ###### MEMBERS MANAGEMENT #######
 
 def new_member(update,context):
@@ -503,9 +507,9 @@ def new_member(update,context):
                             "Thank the Elder dragons. <b>{}</b> is here to save us from Safi'jiiva!".format(newcomer),
                             "<b>{}</b> is here to cook us some raw meat.".format(newcomer)]
             index = random.randrange(0,len(welcome_list),1)
-            update.message.reply_html("{} \nAdd your PSN ID & IGN <a href='https://docs.google.com/spreadsheets/d/1BOgecU-LdpHjZX_ruCRqoWgfzea-WTT9zYSnzmNzauA/edit#gid=0'>here</a>.\n"
+            update.message.reply_html("{} \nMake sure to read the <a href='https://t.me/c/1336587845/66769'>rules</a>. \nAdd your PSN ID & IGN <a href='https://docs.google.com/spreadsheets/d/1BOgecU-LdpHjZX_ruCRqoWgfzea-WTT9zYSnzmNzauA/edit#gid=0'>here</a>.\n"
                                       "Tag @zacharylky or @bloodychaos for invitation to squad. Party up and have fun hunting!".format(welcome_list[index]))
-            # db.close()
+
 
 
 def pendingsquad(update,context):
@@ -673,6 +677,7 @@ def main():
     dp.add_handler(CommandHandler('checkevent', checkevent))
     dp.add_handler(CommandHandler('leaveevent', leaveevent))
     dp.add_handler(CommandHandler('googledocs', googledocs))
+    dp.add_handler(CommandHandler('rules', rules))
 
     # on noncommand i.e message - echo the message on Telegram
     dp.add_handler(MessageHandler(Filters.status_update.new_chat_members, new_member))
