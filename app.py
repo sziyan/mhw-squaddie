@@ -19,8 +19,8 @@ import random
 import logging
 from mongoengine import *
 from mongoengine import connect
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
-from telegram import MessageEntity, InlineKeyboardMarkup,InlineKeyboardButton
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler
+from telegram import MessageEntity, InlineKeyboardMarkup,InlineKeyboardButton,
 import praw
 from config import Config
 from datetime import datetime
@@ -36,7 +36,7 @@ logging.info("PRAW instantiated successfully.")
 db = connect('sg', host=Config.host)
 TOKEN = Config.token
 
-
+EVENT, TIME = range(2)
 
 class Player(Document):
     username = StringField(max_length=200, required=False)
@@ -317,65 +317,94 @@ def changetime(update, context):
 
 ####Events######
 
+# def addevent(update, context):
+#     if check_chat(update.message.chat.id):
+#         username = update.message.from_user.username
+#         player_name = update.message.from_user.first_name
+#         if username is None:
+#             update.message.reply_text("Kindly create a Telegram username first before joining event.")
+#             return
+#         else:
+#             if not Player.objects(username=username):
+#                 user = Player(username=username, player_name=player_name)
+#                 user.save()
+#             else:
+#                 user = Player.objects(username=username)[0]
+#         if len(context.args) == 0:
+#             update.message.reply_text('Command syntax is /addevent <time>,<description')
+#             return
+#         space_index = update.message.text.find(" ") #get the index after command
+#         input_message = update.message.text[space_index+1:] #the message we interested in
+#         time = input_message.split(',')[0].strip() #the first part of the message which is time
+#         message = input_message.split(',') #number of elements in the message
+#         if "," in time:
+#             time = time.replace(",", "")
+#
+#         if len(message) < 2:
+#             update.message.reply_text('Missing time or description. \nCommand syntax is /addevent <time>,<description>')
+#             return
+#         try:
+#             if '.' in time:
+#                 time_in_datetime = datetime.strptime(time, '%I.%M%p')
+#                 time = time_in_datetime.strftime('%I.%M%p').lstrip('0')
+#             else:
+#                 time_in_datetime = datetime.strptime(time, '%I%p')
+#                 time = time_in_datetime.strftime('%I%p').lstrip('0')
+#         except ValueError:
+#             update.message.reply_text('Invalid time format. Syntax is /addevent <time>,<description>')
+#             return
+#         second_part_msg_index = input_message.find(',')
+#         description = input_message[second_part_msg_index+1:]
+#         if Event.objects.count() == 0:
+#             event_id = 1
+#         else:
+#             event_id_list = []
+#             start_count =1
+#             for event in Event.objects():
+#                 event_id_list.append(event.event_id)
+#             event_id_list.sort()
+#             for i in event_id_list:
+#                 if start_count == i: #already exist
+#                     start_count +=1
+#                 else:
+#                     event_id = start_count
+#             if start_count > len(event_id_list):
+#                 event_id = start_count
+#
+#
+#         event = Event(event_id=event_id, time=time,description=description, players=[user], host=player_name)
+#         event.save()
+#         update.message.reply_html('Event created at <b>{}</b>. \n Use /joinevent to indicate your interest!'.format(time))
+#         db.close()
+
 def addevent(update, context):
-    if check_chat(update.message.chat.id):
-        username = update.message.from_user.username
-        player_name = update.message.from_user.first_name
-        if username is None:
-            update.message.reply_text("Kindly create a Telegram username first before joining event.")
-            return
-        else:
-            if not Player.objects(username=username):
-                user = Player(username=username, player_name=player_name)
-                user.save()
-            else:
-                user = Player.objects(username=username)[0]
-        if len(context.args) == 0:
-            update.message.reply_text('Command syntax is /addevent <time>,<description')
-            return
-        space_index = update.message.text.find(" ") #get the index after command
-        input_message = update.message.text[space_index+1:] #the message we interested in
-        time = input_message.split(',')[0].strip() #the first part of the message which is time
-        message = input_message.split(',') #number of elements in the message
-        if "," in time:
-            time = time.replace(",", "")
+    update.message.reply_text('Creating new event. What is the event name?(/cancel to cancel creation.)')
+    return EVENT
 
-        if len(message) < 2:
-            update.message.reply_text('Missing time or description. \nCommand syntax is /addevent <time>,<description>')
-            return
-        try:
-            if '.' in time:
-                time_in_datetime = datetime.strptime(time, '%I.%M%p')
-                time = time_in_datetime.strftime('%I.%M%p').lstrip('0')
-            else:
-                time_in_datetime = datetime.strptime(time, '%I%p')
-                time = time_in_datetime.strftime('%I%p').lstrip('0')
-        except ValueError:
-            update.message.reply_text('Invalid time format. Syntax is /addevent <time>,<description>')
-            return
-        second_part_msg_index = input_message.find(',')
-        description = input_message[second_part_msg_index+1:]
-        if Event.objects.count() == 0:
-            event_id = 1
-        else:
-            event_id_list = []
-            start_count =1
-            for event in Event.objects():
-                event_id_list.append(event.event_id)
-            event_id_list.sort()
-            for i in event_id_list:
-                if start_count == i: #already exist
-                    start_count +=1
-                else:
-                    event_id = start_count
-            if start_count > len(event_id_list):
-                event_id = start_count
+def eventName(update, context):
+    event_name = update.message.text
+    context.user_data['event'] = event_name
+    print('Event name: {}'.format(update.message.text))
+    update.message.reply_text('Now, what time is the event?(/cancel to cancel creation.)')
+    return TIME
 
+def eventTime(update, context):
+    time = update.message.text
+    user_data = context.user_data
+    user_data['time'] = time
+    user = update.message.from_user
+    first_name = user.first_name
+    update.message.reply_text('Event created as below: \n'
+                              'Host: {} \n'
+                              'Event name: {} \n'
+                              'Time: {}'.format(first_name, user_data['event'], user_data['time']))
 
-        event = Event(event_id=event_id, time=time,description=description, players=[user], host=player_name)
-        event.save()
-        update.message.reply_html('Event created at <b>{}</b>. \n Use /joinevent to indicate your interest!'.format(time))
-        db.close()
+    return ConversationHandler.END
+
+def cancel(update, context):
+    update.message.reply_text('Event creation cancelled.')
+
+    return ConversationHandler.END
 
 def joinevent(update, context):
     if check_chat(update.message.chat.id):
@@ -616,13 +645,25 @@ def main():
     dp.add_handler(CommandHandler('session', session))
     dp.add_handler(CommandHandler('addsession', addsession))
     dp.add_handler(CommandHandler('deletesession', deletesession))
-    dp.add_handler(CommandHandler('addevent', addevent))
     dp.add_handler(CommandHandler('joinevent', joinevent))
     dp.add_handler(CommandHandler('deleteevent', deleteevent))
     dp.add_handler(CommandHandler('checkevent', checkevent))
     dp.add_handler(CommandHandler('leaveevent', leaveevent))
     dp.add_handler(CommandHandler('googledocs', googledocs))
     dp.add_handler(CommandHandler('rules', rules))
+
+    #Conversation handler
+    conv_handler = ConversationHandler(
+        entry_points=[CommandHandler('addevent', addevent)],
+        states={
+            EVENT: [MessageHandler(Filters.text, eventName)],
+            TIME: [MessageHandler(Filters.text, eventTime)]
+        },
+
+        fallbacks=[CommandHandler('cancel', cancel)]
+    )
+
+    dp.add_handler(conv_handler)
 
     # on noncommand i.e message - echo the message on Telegram
     dp.add_handler(MessageHandler(Filters.status_update.new_chat_members, new_member))

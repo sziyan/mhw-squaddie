@@ -6,19 +6,32 @@ logging.basicConfig(level=logging.INFO, filename='output.log', filemode='a', for
 logger = logging.getLogger(__name__)
 bot = Bot(token='918929045:AAGfcxwoXBP1yg8C8t7wy9cx7V0vy9CrIsk')
 
+
 EVENT, TIME = range(2)
+
+
+def facts_to_str(user_data):
+    facts = list()
+
+    for key, value in user_data.items():
+        facts.append('{} - {}'.format(key, value))
+    return '\n'.join(facts).join(['\n', '\n'])
+
+
+
 def error(update, context):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, context.error)
 
-def start(update, context):
+def start_event(update, context):
     update.message.reply_text('Creating new event. What is the event name?')
-
     return EVENT
 
 
 def event(update, context):
-    user = update.message.from_user
+    print('test')
+    event_name = update.message.text
+    context.user_data['event'] = event_name
     print('Event name: {}'.format(update.message.text))
     update.message.reply_text('Now, what time shall the event be held at?')
 
@@ -26,61 +39,22 @@ def event(update, context):
 
 
 def time(update, context):
-    user = update.message.from_user
     time = update.message.text
-    update.message.reply_text('Gotcha. Event created as below: \n'
+    user_data = context.user_data
+    user_data['time'] = time
+    user = update.message.from_user
+    first_name = user.first_name
+    update.message.reply_text('Event created as below: \n'
+                              'Host: {} \n'
                               'Event name: {} \n'
-                              'Time: {}'.format())
-
-
-def skip_photo(update, context):
-    user = update.message.from_user
-    logger.info("User %s did not send a photo.", user.first_name)
-    update.message.reply_text('I bet you look great! Now, send me your location please, '
-                              'or send /skip.')
-
-    return LOCATION
-
-
-def location(update, context):
-    user = update.message.from_user
-    user_location = update.message.location
-    logger.info("Location of %s: %f / %f", user.first_name, user_location.latitude,
-                user_location.longitude)
-    update.message.reply_text('Maybe I can visit you sometime! '
-                              'At last, tell me something about yourself.')
-
-    return BIO
-
-
-def skip_location(update, context):
-    user = update.message.from_user
-    logger.info("User %s did not send a location.", user.first_name)
-    update.message.reply_text('You seem a bit paranoid! '
-                              'At last, tell me something about yourself.')
-
-    return BIO
-
-
-def bio(update, context):
-    user = update.message.from_user
-    logger.info("Bio of %s: %s", user.first_name, update.message.text)
-    update.message.reply_text('Thank you! I hope we can talk again some day.')
+                              'Time: {}'.format(first_name,user_data['event'], user_data['time']))
 
     return ConversationHandler.END
-
 
 def cancel(update, context):
-    user = update.message.from_user
-    logger.info("User %s canceled the conversation.", user.first_name)
-    update.message.reply_text('Bye! I hope we can talk again some day.',
-                              reply_markup=ReplyKeyboardRemove())
+    update.message.reply_text('Event creation cancelled.')
 
     return ConversationHandler.END
-
-
-
-
 
 def main():
     """Start the bot."""
@@ -91,24 +65,16 @@ def main():
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
-    updater.dispatcher.add_handler(CommandHandler('start', start))
+    #updater.dispatcher.add_handler(CommandHandler('start', start))
     # on different commands - answer in Telegram
     #dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("help", help))
 
     conv_handler = ConversationHandler(
-        entry_points=[CommandHandler('start', start)],
-
+        entry_points=[CommandHandler('sevent', start_event)],
         states={
-            GENDER: [MessageHandler(Filters.regex('^(Boy|Girl|Other)$'), gender)],
-
-            PHOTO: [MessageHandler(Filters.photo, photo),
-                    CommandHandler('skip', skip_photo)],
-
-            LOCATION: [MessageHandler(Filters.location, location),
-                       CommandHandler('skip', skip_location)],
-
-            BIO: [MessageHandler(Filters.text, bio)]
+            EVENT: [MessageHandler(Filters.text, event)],
+            TIME: [MessageHandler(Filters.text, time)]
         },
 
         fallbacks=[CommandHandler('cancel', cancel)]
