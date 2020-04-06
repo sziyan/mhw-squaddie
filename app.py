@@ -20,7 +20,7 @@ import logging
 from mongoengine import *
 from mongoengine import connect
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
-from telegram import MessageEntity
+from telegram import MessageEntity, InlineKeyboardMarkup,InlineKeyboardButton
 import praw
 from config import Config
 from datetime import datetime
@@ -300,10 +300,6 @@ def deletesiege(update,context):
         db.close()
 
 
-# def echo(update, context):
-#     """Echo the user message."""
-#     update.message.reply_text(update.message.text)
-
 def changetime(update, context):
     if check_chat(update.message.chat.id):
         if len(context.args) == 0:
@@ -495,11 +491,12 @@ def rules(update, context):
 ###### MEMBERS MANAGEMENT #######
 
 def new_member(update,context):
-    if check_chat(update.message.chat.id):
+    if not check_chat(update.message.chat.id):
         for member in update.message.new_chat_members:
             newcomer = member.first_name
-            # newplayer = NewPlayer(first_name=newcomer)
-            # newplayer.save()
+            keyboard = [[InlineKeyboardButton("Rules", url='https://telegra.ph/Rules-and-Community-Guidelines-04-05'),
+                         InlineKeyboardButton("Squad Spreadsheet", url='https://docs.google.com/spreadsheets/d/1BOgecU-LdpHjZX_ruCRqoWgfzea-WTT9zYSnzmNzauA/edit#gid=0')]]
+            reply_markup = InlineKeyboardMarkup(keyboard)
             welcome_list = ["Keep your palicoes! <b>{}</b> is here to hunt!!".format(newcomer),
                             "<b>{}</b> is here to slay some Great Jagras!".format(newcomer),
                             "Here comes <b>{}</b>, the Rajang(ahem Rajunk) slayer!".format(newcomer),
@@ -507,42 +504,8 @@ def new_member(update,context):
                             "Thank the Elder dragons. <b>{}</b> is here to save us from Safi'jiiva!".format(newcomer),
                             "<b>{}</b> is here to cook us some raw meat.".format(newcomer)]
             index = random.randrange(0,len(welcome_list),1)
-            update.message.reply_html("{} \nMake sure to read the <a href='https://t.me/c/1336587845/66769'>rules</a>. \nAdd your PSN ID & IGN <a href='https://docs.google.com/spreadsheets/d/1BOgecU-LdpHjZX_ruCRqoWgfzea-WTT9zYSnzmNzauA/edit#gid=0'>here</a>.\n"
-                                      "Tag @zacharylky or @bloodychaos for invitation to squad. Party up and have fun hunting!".format(welcome_list[index]))
-
-
-
-def pendingsquad(update,context):
-    if check_chat(update.message.chat.id):
-        if NewPlayer.objects.count() > 0:
-            new_players = []
-            index = 1
-            for member in NewPlayer.objects:
-                message = "{}. {}".format(index, member.first_name)
-                index += 1
-                new_players.append(message)
-            msg = "\n".join(new_players)
-            update.message.reply_html("The following players just joined and is pending to be added to squad: \n{}".format(msg))
-            db.close()
-        else:
-            update.message.reply_text("No pending members to join squad.")
-
-def invitedsquad(update, context):
-    if check_chat(update.message.chat.id):
-        if NewPlayer.objects.count() > 0:
-            if len(context.args) == 0:
-                update.message.reply_text("Syntax is /invitedsquad <username>")
-                return
-            player_name = context.args[0]
-            for member in NewPlayer.objects:
-                if player_name == member.first_name:
-                    update.message.reply_html("<b>{}</b> removed from list.".format(member.first_name))
-                    member.delete()
-                    db.close()
-                    return
-            update.message.reply_text("Username not found.")
-        else:
-            update.message.reply_text("No players in list to be added to squad.")
+            update.message.reply_html("{} \nMake sure to read the <b>rules</b> and add your PSN ID/IGN to the <b>squad spreadsheet</b> by using the buttons below.\n"
+                                      "Tag @zacharylky or @bloodychaos for invitation to squad. Party up and have fun hunting!".format(welcome_list[index]), reply_markup=reply_markup)
 
 def member_left(update,context):
     if check_chat(update.message.chat.id):
@@ -615,21 +578,6 @@ def reddit_link(update,context):
     else:
         return
 
-# def youtube(update, context):
-#     if check_chat(update.message.chat.id):
-#         if len(context.args) == 0:
-#             update.message.reply_text('Syntax is /youtube <video to search>')
-#             return
-#         query = " ".join(context.args)
-#         search = yt.search(q=query, max_results=1)
-#         if len(search) > 0:
-#             video_id = search[0].get('video_id')
-#             channel = search[0].get('channel_title')
-#             video_link = 'https://www.youtube.com/watch?v={}'.format(video_id)
-#             message = '<b>Search Terms:</b> {} \n<b>Uploaded by:</b> {} \n\n{}'.format(query, channel, video_link)
-#             update.message.reply_html(message)
-#         else:
-#             update.message.reply("Unable to find any youtube video.")
 
 def googledocs(update,context):
     if check_chat(update.message.chat.id):
@@ -664,13 +612,10 @@ def main():
     dp.add_handler(CommandHandler('leavesiege', leavesiege))
     dp.add_handler(CommandHandler('checksiege', checksiege))
     dp.add_handler(CommandHandler('deletesiege', deletesiege))
-    dp.add_handler(CommandHandler('pendingsquad', pendingsquad))
-    dp.add_handler(CommandHandler('invitedsquad', invitedsquad))
     dp.add_handler(CommandHandler('changetime', changetime))
     dp.add_handler(CommandHandler('session', session))
     dp.add_handler(CommandHandler('addsession', addsession))
     dp.add_handler(CommandHandler('deletesession', deletesession))
-    #dp.add_handler(CommandHandler('youtube', youtube))
     dp.add_handler(CommandHandler('addevent', addevent))
     dp.add_handler(CommandHandler('joinevent', joinevent))
     dp.add_handler(CommandHandler('deleteevent', deleteevent))
