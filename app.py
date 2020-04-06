@@ -491,7 +491,7 @@ def rules(update, context):
 ###### MEMBERS MANAGEMENT #######
 
 def new_member(update,context):
-    if not check_chat(update.message.chat.id):
+    if check_chat(update.message.chat.id):
         for member in update.message.new_chat_members:
             newcomer = member.first_name
             keyboard = [[InlineKeyboardButton("Rules", url='https://telegra.ph/Rules-and-Community-Guidelines-04-05'),
