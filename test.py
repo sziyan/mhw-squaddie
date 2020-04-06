@@ -1,23 +1,83 @@
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler
-from telegram import MessageEntity,InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler
+from telegram import MessageEntity, Bot,ReplyKeyboardMarkup, ReplyKeyboardRemove
 import logging
 
 logging.basicConfig(level=logging.INFO, filename='output.log', filemode='a', format='%(asctime)s %(levelname)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 logger = logging.getLogger(__name__)
+bot = Bot(token='918929045:AAGfcxwoXBP1yg8C8t7wy9cx7V0vy9CrIsk')
 
+EVENT, TIME = range(2)
 def error(update, context):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, context.error)
 
 def start(update, context):
-    keyboard = [[InlineKeyboardButton("Rules", url='https://telegra.ph/Rules-and-Community-Guidelines-04-05'),
-                 InlineKeyboardButton("Option 2", callback_data='2')],
+    update.message.reply_text('Creating new event. What is the event name?')
 
-                [InlineKeyboardButton("Option 3", callback_data='3')]]
+    return EVENT
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
 
-    update.message.reply_text('Please choose:', reply_markup=reply_markup)
+def event(update, context):
+    user = update.message.from_user
+    print('Event name: {}'.format(update.message.text))
+    update.message.reply_text('Now, what time shall the event be held at?')
+
+    return TIME
+
+
+def time(update, context):
+    user = update.message.from_user
+    time = update.message.text
+    update.message.reply_text('Gotcha. Event created as below: \n'
+                              'Event name: {} \n'
+                              'Time: {}'.format())
+
+
+def skip_photo(update, context):
+    user = update.message.from_user
+    logger.info("User %s did not send a photo.", user.first_name)
+    update.message.reply_text('I bet you look great! Now, send me your location please, '
+                              'or send /skip.')
+
+    return LOCATION
+
+
+def location(update, context):
+    user = update.message.from_user
+    user_location = update.message.location
+    logger.info("Location of %s: %f / %f", user.first_name, user_location.latitude,
+                user_location.longitude)
+    update.message.reply_text('Maybe I can visit you sometime! '
+                              'At last, tell me something about yourself.')
+
+    return BIO
+
+
+def skip_location(update, context):
+    user = update.message.from_user
+    logger.info("User %s did not send a location.", user.first_name)
+    update.message.reply_text('You seem a bit paranoid! '
+                              'At last, tell me something about yourself.')
+
+    return BIO
+
+
+def bio(update, context):
+    user = update.message.from_user
+    logger.info("Bio of %s: %s", user.first_name, update.message.text)
+    update.message.reply_text('Thank you! I hope we can talk again some day.')
+
+    return ConversationHandler.END
+
+
+def cancel(update, context):
+    user = update.message.from_user
+    logger.info("User %s canceled the conversation.", user.first_name)
+    update.message.reply_text('Bye! I hope we can talk again some day.',
+                              reply_markup=ReplyKeyboardRemove())
+
+    return ConversationHandler.END
+
 
 
 
@@ -36,6 +96,25 @@ def main():
     #dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("help", help))
 
+    conv_handler = ConversationHandler(
+        entry_points=[CommandHandler('start', start)],
+
+        states={
+            GENDER: [MessageHandler(Filters.regex('^(Boy|Girl|Other)$'), gender)],
+
+            PHOTO: [MessageHandler(Filters.photo, photo),
+                    CommandHandler('skip', skip_photo)],
+
+            LOCATION: [MessageHandler(Filters.location, location),
+                       CommandHandler('skip', skip_location)],
+
+            BIO: [MessageHandler(Filters.text, bio)]
+        },
+
+        fallbacks=[CommandHandler('cancel', cancel)]
+    )
+
+    dp.add_handler(conv_handler)
 
     # on noncommand i.e message - echo the message on Telegram
 
