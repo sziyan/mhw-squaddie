@@ -40,7 +40,7 @@ class Event(Document):
     event_id = IntField(min_value=1, required=True)
     time = StringField(max_length=200, required=True)
     description = StringField(required=False)
-    players = ListField(StringField())
+    players = DictField()
     host = StringField(max_length=200, required=True)
 
 # Enable logging
@@ -397,8 +397,9 @@ def eventTime(update, context):
     for i in range(1, len(event_list)):
         if i not in event_list:
             event_id = i
-
-    event = Event(event_id=event_id, time=time,description=event_title, players=[user], host=first_name)
+    player = {}
+    player[user.id] = user
+    event = Event(event_id=event_id, time=time,description=event_title, players=player, host=first_name)
     print(event.event_id)
     print(event.description)
     print(event.players[0].first_name)
