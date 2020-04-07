@@ -9,7 +9,6 @@ bot = Bot(token='918929045:AAGfcxwoXBP1yg8C8t7wy9cx7V0vy9CrIsk')
 
 EVENT, TIME = range(2)
 
-
 def facts_to_str(user_data):
     facts = list()
 
@@ -55,6 +54,14 @@ def cancel(update, context):
     update.message.reply_text('Event creation cancelled.')
 
     return ConversationHandler.END
+
+def help(update, context):
+    user = update.message.from_user
+    print(type(user))
+
+    update.message.reply_text(id)
+
+
 
 def main():
     """Start the bot."""

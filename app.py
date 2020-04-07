@@ -1,26 +1,9 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# This program is dedicated to the public domain under the CC0 license.
-
-"""
-Simple Bot to reply to Telegram messages.
-
-First, a few handler functions are defined. Then, those functions are passed to
-the Dispatcher and registered at their respective places.
-Then, the bot is started and runs until we press Ctrl-C on the command line.
-
-Usage:
-Basic Echobot example, repeats messages.
-Press Ctrl-C on the command line or send a signal to the process to stop the
-bot.
-"""
-
 import random
 import logging
 from mongoengine import *
 from mongoengine import connect
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler
-from telegram import MessageEntity, InlineKeyboardMarkup,InlineKeyboardButton,
+from telegram import MessageEntity, InlineKeyboardMarkup,InlineKeyboardButton
 import praw
 from config import Config
 from datetime import datetime
@@ -47,11 +30,8 @@ class Siege(Document):
     siege_id = IntField(min_value=1, required=True)
     time = StringField(max_length=200, required=True)
     rounds = IntField(required=False)
-    players = ListField(ReferenceField(Player))
+    players = ListField()
     host = StringField(max_length=200, required=True)
-
-class NewPlayer(Document):
-    first_name = StringField(max_length=200, required = False)
 
 class Session(Document):
     session_id = StringField(max_length=200, required = True)
@@ -60,7 +40,7 @@ class Event(Document):
     event_id = IntField(min_value=1, required=True)
     time = StringField(max_length=200, required=True)
     description = StringField(required=False)
-    players = ListField(ReferenceField(Player))
+    players = ListField(StringField())
     host = StringField(max_length=200, required=True)
 
 # Enable logging
@@ -112,38 +92,52 @@ def siegestatus():
     return message
 
 def eventstatus():
-    msg = []
-    if Event.objects.count() > 0:
-        event_list=[]
+    msg = ""
+    if Event.objects.count() > 0:   #At least 1 event created
+        event_list = []
         for event in Event.objects:
-            event_id = event.event_id
-            event_list.append(event_id)
-            event_list.sort()
-
-        for i in event_list:
-            event = Event.objects(event_id=i)[0]
-            player_list = event.players
-            players = []
-            index = 1
-            if len(player_list) > 0:
-                for player in player_list:
-                    username = player.username
-                    player_name = player.player_name
-                    message = "{}. {} ({})".format(index, username, player_name)
-                    players.append(message)
-                    index += 1
-                players_message = "\n".join(players)
-                msg_send = "<b>Event ID:</b> {} \n<b>Description: </b>{} \n<b>Event time:</b> {} (GMT +8) \n<b>Started By:</b> {} \n<b>Players:</b> {} \n{}".format(event.event_id, event.description ,event.time, event.host, len(player_list),players_message)
-                msg.append(msg_send)
-            else:
-                msg_send = "<b>Event ID:</b> {} \n<b>Description: </b>{} \n<b>Event time:</b> {} (GMT +8) \n<b>Players:</b> 0 \nNo players in siege.".format(event.event_id, event.description,event.time)
-                msg.append(msg_send)
-            msg.append("")
+            msg += '{} \n'.format(event.description)
+            msg += '<b>Players:</b> \n'
+            for player in event.players:
+                msg += player.first_name + '\n'
+            msg += '\n'
     else:
-        msg_send = "No event planned."
-        msg.append(msg_send)
-    message = "\n".join(msg)
-    return message
+        msg = 'No event planned.'
+    return msg
+
+# def eventstatus():
+#     msg = []
+#     if Event.objects.count() > 0:
+#         event_list=[]
+#         for event in Event.objects:
+#             event_id = event.event_id
+#             event_list.append(event_id)
+#             event_list.sort()
+#
+#         for i in event_list:
+#             event = Event.objects(event_id=i)[0]
+#             player_list = event.players
+#             players = []
+#             index = 1
+#             if len(player_list) > 0:
+#                 for player in player_list:
+#                     username = player.username
+#                     player_name = player.player_name
+#                     message = "{}. {} ({})".format(index, username, player_name)
+#                     players.append(message)
+#                     index += 1
+#                 players_message = "\n".join(players)
+#                 msg_send = "<b>Event ID:</b> {} \n<b>Description: </b>{} \n<b>Event time:</b> {} (GMT +8) \n<b>Started By:</b> {} \n<b>Players:</b> {} \n{}".format(event.event_id, event.description ,event.time, event.host, len(player_list),players_message)
+#                 msg.append(msg_send)
+#             else:
+#                 msg_send = "<b>Event ID:</b> {} \n<b>Description: </b>{} \n<b>Event time:</b> {} (GMT +8) \n<b>Players:</b> 0 \nNo players in siege.".format(event.event_id, event.description,event.time)
+#                 msg.append(msg_send)
+#             msg.append("")
+#     else:
+#         msg_send = "No event planned."
+#         msg.append(msg_send)
+#     message = "\n".join(msg)
+#     return message
 
 def setsiege(update, context):
     if check_chat(update.message.chat.id):
@@ -384,67 +378,101 @@ def addevent(update, context):
 def eventName(update, context):
     event_name = update.message.text
     context.user_data['event'] = event_name
-    print('Event name: {}'.format(update.message.text))
     update.message.reply_text('Now, what time is the event?(/cancel to cancel creation.)')
     return TIME
 
 def eventTime(update, context):
     time = update.message.text
+    print(time)
     user_data = context.user_data
+    event_title = user_data['event']
     user_data['time'] = time
     user = update.message.from_user
     first_name = user.first_name
+    event_list = []
+    event_id = 1
+
+    for event in Event.objects():
+        event_list.append(event.event_id)
+    for i in range(1, len(event_list)):
+        if i not in event_list:
+            event_id = i
+
+    event = Event(event_id=event_id, time=time,description=event_title, players=[user], host=first_name)
+    print(event.event_id)
+    print(event.description)
+    print(event.players[0].first_name)
+    event.save()
     update.message.reply_text('Event created as below: \n'
                               'Host: {} \n'
                               'Event name: {} \n'
-                              'Time: {}'.format(first_name, user_data['event'], user_data['time']))
+                              'Time: {}'.format(first_name, event_title, time))
 
     return ConversationHandler.END
 
 def cancel(update, context):
     update.message.reply_text('Event creation cancelled.')
-
     return ConversationHandler.END
 
 def joinevent(update, context):
-    if check_chat(update.message.chat.id):
-        username = update.message.from_user.username
-        player_name = update.message.from_user.first_name
-        if username is None:
-            update.message.reply_text("Kindly create a Telegram username first before joining siege.")
-            return
-        else:
-            if not Player.objects(username=username):
-                user = Player(username=username, player_name=player_name)
-                user.save()
+    user = update.message.from_user
+    if Event.objects.count() > 0: #if at least 1 event created.
+        if len(context.args) == 0:  #if no input arguments
+            event_id = 1
+            update.message.reply_text('Event ID defaulted to 1 as no event ID specified.')
+        else:   #if user input arguments
+            event_id = context.args[0]
+        if Event.objects(event_id=event_id)[0] is None: #if unable to find the event
+            update.message.reply_text('Event ID does not exixt.')
+        else:   #if event id exist
+            event = Event.objects(event_id=event_id)[0]
+            players = event.players #get a list of players in event
+            if user in players: #if user object in players list
+                update.message.reply_text('You have already joined this event.')
             else:
-                user = Player.objects(username=username)[0]
-        if Event.objects.count() > 0:
-            if len(context.args) == 0:
-                id_join = 1
-            else:
-                id_join = int(context.args[0])
-            if not Event.objects(event_id=id_join):
-                if id_join == 1:
-                    update.message.reply_text("Event 1 is not active. \nPlease select event ID to join.")
-                else:
-                    update.message.reply_text("Invalid event ID")
-                db.close()
-                return
-            event = Event.objects(event_id=id_join)[0]
-            player_list = event.players
-            for players in player_list:
-                if players.username == username:
-                    update.message.reply_html("Already in event. Type /checkevent for event status.")
-                    return
-            if len(player_list) >= 4:
-                update.message.reply_html("Max number of players(4) already in event.")
-            Event.objects(event_id=id_join).update_one(push__players=user)
-            update.message.reply_html(eventstatus())
-        else:
-            update.reply_text("No event created.")
+                event.update_one(push__players=user)
+                event.save()
+                update.message.reply_html('<b>{}</b> joined the event. \n{}'.format(user.id, eventstatus()))
 
-        db.close()
+# def joinevent(update, context):
+#     if check_chat(update.message.chat.id):
+#         username = update.message.from_user.username
+#         player_name = update.message.from_user.first_name
+#         if username is None:
+#             update.message.reply_text("Kindly create a Telegram username first before joining siege.")
+#             return
+#         else:
+#             if not Player.objects(username=username):
+#                 user = Player(username=username, player_name=player_name)
+#                 user.save()
+#             else:
+#                 user = Player.objects(username=username)[0]
+#         if Event.objects.count() > 0:
+#             if len(context.args) == 0:
+#                 id_join = 1
+#             else:
+#                 id_join = int(context.args[0])
+#             if not Event.objects(event_id=id_join):
+#                 if id_join == 1:
+#                     update.message.reply_text("Event 1 is not active. \nPlease select event ID to join.")
+#                 else:
+#                     update.message.reply_text("Invalid event ID")
+#                 db.close()
+#                 return
+#             event = Event.objects(event_id=id_join)[0]
+#             player_list = event.players
+#             for players in player_list:
+#                 if players.username == username:
+#                     update.message.reply_html("Already in event. Type /checkevent for event status.")
+#                     return
+#             if len(player_list) >= 4:
+#                 update.message.reply_html("Max number of players(4) already in event.")
+#             Event.objects(event_id=id_join).update_one(push__players=user)
+#             update.message.reply_html(eventstatus())
+#         else:
+#             update.reply_text("No event created.")
+#
+#         db.close()
 
 def deleteevent(update,context):
     if check_chat(update.message.chat.id):
@@ -627,7 +655,7 @@ def main():
     # Create the Updater and pass it your bot's token.
     # Make sure to set use_context=True to use the new context based callbacks
     # Post version 12 this will no longer be necessary
-    updater = Updater(TOKEN, use_context=True)
+    updater = Updater("918929045:AAGfcxwoXBP1yg8C8t7wy9cx7V0vy9CrIsk", use_context=True)
     logging.info("Waiting for commands..")
 
     # Get the dispatcher to register handlers
