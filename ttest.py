@@ -1,7 +1,20 @@
-test = [2,3,5,6]
+# test = [1,2,3,4]
+#
+# test.remove(3)
+# print(test)
 
-for i in range(1, len(test)):
-    if i not in test:
-        print('Missing number is {}'.format(i))
-    else:
-        print(i)
+
+# text = '123456789900'
+# mac = ""
+# for i in range(0, len(text), 2):
+#     mac+='{}{}-'.format(text[i],text[i+1])
+#
+# mac = mac[:-1]
+# print(mac)
+
+text = '9pm'
+
+from datetime import datetime
+
+time = datetime.strptime(text,'%I%M%p')
+print(time)

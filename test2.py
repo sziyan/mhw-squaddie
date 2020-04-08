@@ -16,10 +16,10 @@ bot.
 
 import logging
 
-from telegram import ReplyKeyboardMarkup
+from telegram import ReplyKeyboardMarkup, Bot
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters,
                           ConversationHandler)
-
+bot = Bot("918929045:AAGfcxwoXBP1yg8C8t7wy9cx7V0vy9CrIsk")
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -33,6 +33,10 @@ reply_keyboard = [['Age', 'Favourite colour'],
                   ['Done']]
 markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
 
+def test(update, context):
+    id = 90569499
+    chat_member = bot.get_chat_member(user_id=id, chat_id=update.message.chat_id)
+    update.message.reply_text(chat_member.user.username)
 
 def facts_to_str(user_data):
     facts = list()
@@ -110,6 +114,7 @@ def main():
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
 
+    dp.add_handler(CommandHandler("test", test))
     # Add conversation handler with the states CHOOSING, TYPING_CHOICE and TYPING_REPLY
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],

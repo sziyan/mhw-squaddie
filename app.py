@@ -3,7 +3,7 @@ import logging
 from mongoengine import *
 from mongoengine import connect
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler
-from telegram import MessageEntity, InlineKeyboardMarkup,InlineKeyboardButton
+from telegram import MessageEntity, InlineKeyboardMarkup,InlineKeyboardButton, Bot
 import praw
 from config import Config
 from datetime import datetime
@@ -17,6 +17,7 @@ reddit = praw.Reddit(user_agent="MHW-Squaddie Telegram Bot (by /u/lonerzboy)", c
 logging.info("PRAW instantiated successfully.")
 
 db = connect('sg', host=Config.host)
+bot = Bot("918929045:AAGfcxwoXBP1yg8C8t7wy9cx7V0vy9CrIsk")
 TOKEN = Config.token
 
 EVENT, TIME = range(2)
@@ -40,7 +41,7 @@ class Event(Document):
     event_id = IntField(min_value=1, required=True)
     time = StringField(max_length=200, required=True)
     description = StringField(required=False)
-    players = DictField()
+    players = ListField(IntField())
     host = StringField(max_length=200, required=True)
 
 # Enable logging
@@ -54,11 +55,11 @@ logger = logging.getLogger(__name__)
 # context. Error handlers also receive the raised TelegramError object in error.
 
 def check_chat(id):
-    if id == -1001336587845:
-        return True
-    else:
-        return False
-    # return True
+    # if id == -1001336587845:
+    #     return True
+    # else:
+    #     return False
+    return True
 
 def siegestatus():
     msg = []
@@ -91,15 +92,17 @@ def siegestatus():
     message = "\n".join(msg)
     return message
 
-def eventstatus():
+def eventstatus(chat_id):
     msg = ""
     if Event.objects.count() > 0:   #At least 1 event created
-        event_list = []
         for event in Event.objects:
-            msg += '{} \n'.format(event.description)
+            msg += '<b>{}</b> \n'.format(event.description)
+            msg += 'ID: {} \n'.format(event.event_id)
             msg += '<b>Players:</b> \n'
-            for player in event.players:
-                msg += player.first_name + '\n'
+            for userid in event.players:
+                chat_member = bot.get_chat_member(user_id=userid, chat_id=chat_id)
+                name = chat_member.user.full_name
+                msg += '- ' + name + '\n'
             msg += '\n'
     else:
         msg = 'No event planned.'
@@ -383,32 +386,30 @@ def eventName(update, context):
 
 def eventTime(update, context):
     time = update.message.text
-    print(time)
     user_data = context.user_data
     event_title = user_data['event']
     user_data['time'] = time
     user = update.message.from_user
-    first_name = user.first_name
+    full_name = user.full_name
     event_list = []
     event_id = 1
-
-    for event in Event.objects():
+    user_id = user.id
+    if Event.objects.count() > 10:
+        update.message.reply_text('Too many events currently active! Join existing events instead.')
+    for event in Event.objects:
         event_list.append(event.event_id)
-    for i in range(1, len(event_list)):
+    for i in range(1, 10):
         if i not in event_list:
             event_id = i
-    player = {}
-    player[user.id] = user
-    event = Event(event_id=event_id, time=time,description=event_title, players=player, host=first_name)
-    print(event.event_id)
-    print(event.description)
-    print(event.players[0].first_name)
+            break
+    event = Event(event_id=event_id, time=time,description=event_title, players=[user_id], host=full_name)
     event.save()
-    update.message.reply_text('Event created as below: \n'
+    update.message.reply_html('Event scheduled as below: \n\n'
+                              '<b>{}</b> \n'
+                              'ID: {} \n'
                               'Host: {} \n'
-                              'Event name: {} \n'
-                              'Time: {}'.format(first_name, event_title, time))
-
+                              'Time: {}'.format(event_title, event_id, full_name, time))
+    db.close()
     return ConversationHandler.END
 
 def cancel(update, context):
@@ -417,23 +418,26 @@ def cancel(update, context):
 
 def joinevent(update, context):
     user = update.message.from_user
+    user_id = user.id
+    chat_id = update.message.chat_id
     if Event.objects.count() > 0: #if at least 1 event created.
         if len(context.args) == 0:  #if no input arguments
             event_id = 1
-            update.message.reply_text('Event ID defaulted to 1 as no event ID specified.')
         else:   #if user input arguments
             event_id = context.args[0]
-        if Event.objects(event_id=event_id)[0] is None: #if unable to find the event
-            update.message.reply_text('Event ID does not exixt.')
+        if not Event.objects(event_id=event_id): #if unable to find the event
+            update.message.reply_text('Event ID does not exist.')
         else:   #if event id exist
             event = Event.objects(event_id=event_id)[0]
             players = event.players #get a list of players in event
-            if user in players: #if user object in players list
+            if user_id in players: #if user object in players list
                 update.message.reply_text('You have already joined this event.')
             else:
-                event.update_one(push__players=user)
+                #event.update_one(push__players=user_id)
+                event.players.append(user_id)
                 event.save()
-                update.message.reply_html('<b>{}</b> joined the event. \n{}'.format(user.id, eventstatus()))
+                update.message.reply_html('<b>{}</b> joined the event. \n{}'.format(user.full_name, eventstatus(chat_id)))
+    db.close()
 
 # def joinevent(update, context):
 #     if check_chat(update.message.chat.id):
@@ -483,10 +487,7 @@ def deleteevent(update,context):
             else:
                 to_delete = int(context.args[0])
             if not Event.objects(event_id=to_delete):
-                if to_delete == 1:
-                    update.message.reply_text("Event 1 is not active. \nPlease select event ID to delete.")
-                else:
-                    update.message.reply_text("Invalid event ID")
+                update.message.reply_text("Invalid event ID")
                 db.close()
                 return
             event = Event.objects(event_id=to_delete)[0]
@@ -497,47 +498,67 @@ def deleteevent(update,context):
         db.close()
 
 def leaveevent(update, context):
-    if check_chat(update.message.chat.id):
-        if Event.objects.count() > 0:
-
-            username = update.message.from_user.username
-            player_name = update.message.from_user.first_name
-            if username is None:
-                update.message.reply_text("Kindly create a Telegram username first before joining siege.")
-                return
-            else:
-                if not Player.objects(username=username):
-                    user = Player(username=username, player_name=player_name)
-                    user.save()
-                else:
-                    user = Player.objects(username=username)[0]
-            if len(context.args) == 0:
-                id_leave = 1
-            else:
-                id_leave = int(context.args[0])
-            if not Event.objects(event_id=id_leave)[0]:
-                if id_leave == 1:
-                    update.message.reply_text("Event 1 is not active. \nPlease select event ID to leave.")
-                else:
-                    update.message.reply_text("Invalid event ID")
-                db.close()
-                return
-            event = Event.objects(event_id=id_leave)[0]
-            player_list = event.players
-            for player in player_list:
-                if player.username == username:
-                    Event.objects(event_id=id_leave).update_one(pull__players=user)
-                    update.message.reply_html("Left event. \n\n{}".format(eventstatus()))
-                    return
-            update.message.reply_text("You are not in any event.")
+    userid = update.message.from_user.id
+    if Event.objects.count() > 0:
+        if len(context.args) == 0:
+            id_leave = 1
         else:
-            update.message.reply_text("No event planned")
-        db.close()
+            id_leave = int(context.args[0])
+        if not Event.objects(event_id=id_leave)[0]:
+            update.message.reply_text('Event ID {} not active.'.format(id_leave))
+        else:
+            event = Event.objects(event_id=id_leave)[0]
+            players = event.players
+            if userid in players:
+                players.remove(userid)
+                event.save()
+                update.message.reply_html('{} left event. \n\n {}'.format(update.message.from_user.full_name, eventstatus(update.message.chat_id)))
+            else:
+                update.message.reply_text('You have not joined the scheduled event.')
+    else:
+        update.message.reply_text('No events currently scheduled.')
+
+# def leaveevent(update, context):
+#     if check_chat(update.message.chat.id):
+#         if Event.objects.count() > 0:
+#             username = update.message.from_user.username
+#             player_name = update.message.from_user.first_name
+#             if username is None:
+#                 update.message.reply_text("Kindly create a Telegram username first before joining siege.")
+#                 return
+#             else:
+#                 if not Player.objects(username=username):
+#                     user = Player(username=username, player_name=player_name)
+#                     user.save()
+#                 else:
+#                     user = Player.objects(username=username)[0]
+#             if len(context.args) == 0:
+#                 id_leave = 1
+#             else:
+#                 id_leave = int(context.args[0])
+#             if not Event.objects(event_id=id_leave)[0]:
+#                 if id_leave == 1:
+#                     update.message.reply_text("Event 1 is not active. \nPlease select event ID to leave.")
+#                 else:
+#                     update.message.reply_text("Invalid event ID")
+#                 db.close()
+#                 return
+#             event = Event.objects(event_id=id_leave)[0]
+#             player_list = event.players
+#             for player in player_list:
+#                 if player.username == username:
+#                     Event.objects(event_id=id_leave).update_one(pull__players=user)
+#                     update.message.reply_html("Left event. \n\n{}".format(eventstatus()))
+#                     return
+#             update.message.reply_text("You are not in any event.")
+#         else:
+#             update.message.reply_text("No event planned")
+#         db.close()
 
 def checkevent(update, context):
     if check_chat(update.message.chat.id):
         if Event.objects.count() > 0:
-            update.message.reply_html(eventstatus())
+            update.message.reply_html(eventstatus(update.message.chat_id))
         else:
             update.message.reply_text("No event planned at the moment.")
         db.close()
