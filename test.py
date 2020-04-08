@@ -1,24 +1,65 @@
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler
-from telegram import MessageEntity,InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler
+from telegram import MessageEntity, Bot,ReplyKeyboardMarkup, ReplyKeyboardRemove
 import logging
 
 logging.basicConfig(level=logging.INFO, filename='output.log', filemode='a', format='%(asctime)s %(levelname)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 logger = logging.getLogger(__name__)
+bot = Bot(token='918929045:AAGfcxwoXBP1yg8C8t7wy9cx7V0vy9CrIsk')
+
+
+EVENT, TIME = range(2)
+
+def facts_to_str(user_data):
+    facts = list()
+
+    for key, value in user_data.items():
+        facts.append('{} - {}'.format(key, value))
+    return '\n'.join(facts).join(['\n', '\n'])
+
+
 
 def error(update, context):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, context.error)
 
-def start(update, context):
-    keyboard = [[InlineKeyboardButton("Rules", url='https://telegra.ph/Rules-and-Community-Guidelines-04-05'),
-                 InlineKeyboardButton("Option 2", callback_data='2')],
+def start_event(update, context):
+    update.message.reply_text('Creating new event. What is the event name?')
+    return EVENT
 
-                [InlineKeyboardButton("Option 3", callback_data='3')]]
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
+def event(update, context):
+    print('test')
+    event_name = update.message.text
+    context.user_data['event'] = event_name
+    print('Event name: {}'.format(update.message.text))
+    update.message.reply_text('Now, what time shall the event be held at?')
 
-    update.message.reply_text('Please choose:', reply_markup=reply_markup)
+    return TIME
 
+
+def time(update, context):
+    time = update.message.text
+    user_data = context.user_data
+    user_data['time'] = time
+    user = update.message.from_user
+    first_name = user.first_name
+    update.message.reply_text('Event created as below: \n'
+                              'Host: {} \n'
+                              'Event name: {} \n'
+                              'Time: {}'.format(first_name,user_data['event'], user_data['time']))
+
+    return ConversationHandler.END
+
+def cancel(update, context):
+    update.message.reply_text('Event creation cancelled.')
+
+    return ConversationHandler.END
+
+def help(update, context):
+    user = update.message.from_user
+    print(type(user))
+
+    update.message.reply_text(id)
 
 
 
@@ -31,11 +72,22 @@ def main():
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
-    updater.dispatcher.add_handler(CommandHandler('start', start))
+    #updater.dispatcher.add_handler(CommandHandler('start', start))
     # on different commands - answer in Telegram
     #dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("help", help))
 
+    conv_handler = ConversationHandler(
+        entry_points=[CommandHandler('sevent', start_event)],
+        states={
+            EVENT: [MessageHandler(Filters.text, event)],
+            TIME: [MessageHandler(Filters.text, time)]
+        },
+
+        fallbacks=[CommandHandler('cancel', cancel)]
+    )
+
+    dp.add_handler(conv_handler)
 
     # on noncommand i.e message - echo the message on Telegram
 
