@@ -17,9 +17,8 @@ reddit = praw.Reddit(user_agent="MHW-Squaddie Telegram Bot (by /u/lonerzboy)", c
 logging.info("PRAW instantiated successfully.")
 
 db = connect('sg', host=Config.host)
-bot = Bot("918929045:AAGfcxwoXBP1yg8C8t7wy9cx7V0vy9CrIsk")
 TOKEN = Config.token
-
+bot = Bot(TOKEN)
 EVENT, TIME = range(2)
 
 class Player(Document):
@@ -55,11 +54,11 @@ logger = logging.getLogger(__name__)
 # context. Error handlers also receive the raised TelegramError object in error.
 
 def check_chat(id):
-    # if id == -1001336587845:
-    #     return True
-    # else:
-    #     return False
-    return True
+    if id == -1001336587845:
+        return True
+    else:
+        return False
+    # return True
 
 def siegestatus():
     msg = []
@@ -375,8 +374,9 @@ def changetime(update, context):
 #         db.close()
 
 def addevent(update, context):
-    update.message.reply_text('Creating new event. What is the event name?(/cancel to cancel creation.)')
-    return EVENT
+    if check_chat(update.message.chat_id):
+        update.message.reply_text('Creating new event. What is the event name?(/cancel to cancel creation.)')
+        return EVENT
 
 def eventName(update, context):
     event_name = update.message.text
@@ -417,27 +417,28 @@ def cancel(update, context):
     return ConversationHandler.END
 
 def joinevent(update, context):
-    user = update.message.from_user
-    user_id = user.id
-    chat_id = update.message.chat_id
-    if Event.objects.count() > 0: #if at least 1 event created.
-        if len(context.args) == 0:  #if no input arguments
-            event_id = 1
-        else:   #if user input arguments
-            event_id = context.args[0]
-        if not Event.objects(event_id=event_id): #if unable to find the event
-            update.message.reply_text('Event ID does not exist.')
-        else:   #if event id exist
-            event = Event.objects(event_id=event_id)[0]
-            players = event.players #get a list of players in event
-            if user_id in players: #if user object in players list
-                update.message.reply_text('You have already joined this event.')
-            else:
-                #event.update_one(push__players=user_id)
-                event.players.append(user_id)
-                event.save()
-                update.message.reply_html('<b>{}</b> joined the event. \n{}'.format(user.full_name, eventstatus(chat_id)))
-    db.close()
+    if check_chat(update.message.chat_id):
+        user = update.message.from_user
+        user_id = user.id
+        chat_id = update.message.chat_id
+        if Event.objects.count() > 0: #if at least 1 event created.
+            if len(context.args) == 0:  #if no input arguments
+                event_id = 1
+            else:   #if user input arguments
+                event_id = context.args[0]
+            if not Event.objects(event_id=event_id): #if unable to find the event
+                update.message.reply_text('Event ID does not exist.')
+            else:   #if event id exist
+                event = Event.objects(event_id=event_id)[0]
+                players = event.players #get a list of players in event
+                if user_id in players: #if user object in players list
+                    update.message.reply_text('You have already joined this event.')
+                else:
+                    #event.update_one(push__players=user_id)
+                    event.players.append(user_id)
+                    event.save()
+                    update.message.reply_html('<b>{}</b> joined the event. \n{}'.format(user.full_name, eventstatus(chat_id)))
+        db.close()
 
 # def joinevent(update, context):
 #     if check_chat(update.message.chat.id):
@@ -498,25 +499,26 @@ def deleteevent(update,context):
         db.close()
 
 def leaveevent(update, context):
-    userid = update.message.from_user.id
-    if Event.objects.count() > 0:
-        if len(context.args) == 0:
-            id_leave = 1
-        else:
-            id_leave = int(context.args[0])
-        if not Event.objects(event_id=id_leave)[0]:
-            update.message.reply_text('Event ID {} not active.'.format(id_leave))
-        else:
-            event = Event.objects(event_id=id_leave)[0]
-            players = event.players
-            if userid in players:
-                players.remove(userid)
-                event.save()
-                update.message.reply_html('{} left event. \n\n {}'.format(update.message.from_user.full_name, eventstatus(update.message.chat_id)))
+    if check_chat(update.message.chat_id):
+        userid = update.message.from_user.id
+        if Event.objects.count() > 0:
+            if len(context.args) == 0:
+                id_leave = 1
             else:
-                update.message.reply_text('You have not joined the scheduled event.')
-    else:
-        update.message.reply_text('No events currently scheduled.')
+                id_leave = int(context.args[0])
+            if not Event.objects(event_id=id_leave)[0]:
+                update.message.reply_text('Event ID {} not active.'.format(id_leave))
+            else:
+                event = Event.objects(event_id=id_leave)[0]
+                players = event.players
+                if userid in players:
+                    players.remove(userid)
+                    event.save()
+                    update.message.reply_html('{} left event. \n\n {}'.format(update.message.from_user.full_name, eventstatus(update.message.chat_id)))
+                else:
+                    update.message.reply_text('You have not joined the scheduled event.')
+        else:
+            update.message.reply_text('No events currently scheduled.')
 
 # def leaveevent(update, context):
 #     if check_chat(update.message.chat.id):
@@ -677,7 +679,7 @@ def main():
     # Create the Updater and pass it your bot's token.
     # Make sure to set use_context=True to use the new context based callbacks
     # Post version 12 this will no longer be necessary
-    updater = Updater("918929045:AAGfcxwoXBP1yg8C8t7wy9cx7V0vy9CrIsk", use_context=True)
+    updater = Updater(TOKEN, use_context=True)
     logging.info("Waiting for commands..")
 
     # Get the dispatcher to register handlers
