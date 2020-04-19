@@ -586,7 +586,7 @@ def new_member(update,context):
                             "<b>{}</b> is here to cook us some raw meat.".format(newcomer)]
             index = random.randrange(0,len(welcome_list),1)
             update.message.reply_html("{} \nMake sure to read the <b>rules</b> and add your PSN ID/IGN to the <b>squad spreadsheet</b> by using the buttons below.\n"
-                                      "Tag @zacharylky or @bloodychaos for invitation to squad. Party up and have fun hunting!".format(welcome_list[index]), reply_markup=reply_markup)
+                                      "Tag @zacharylky / @bloodychaos / @DeadKuma for invitation to squad. Party up and have fun hunting!".format(welcome_list[index]), reply_markup=reply_markup)
 
 def member_left(update,context):
     if check_chat(update.message.chat.id):
