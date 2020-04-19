@@ -583,6 +583,7 @@ def new_member(update,context):
                             "Here comes <b>{}</b>, the Rajang(ahem Rajunk) slayer!".format(newcomer),
                             "Welcome <b>{}</b> to the Gathering Hall.".format(newcomer),
                             "Thank the Elder dragons. <b>{}</b> is here to save us from Safi'jiiva!".format(newcomer),
+                            "🐋 cum <b>{}</b> to the hunting hall.".format(newcomer),
                             "<b>{}</b> is here to cook us some raw meat.".format(newcomer)]
             index = random.randrange(0,len(welcome_list),1)
             update.message.reply_html("{} \nMake sure to read the <b>rules</b> and add your PSN ID/IGN to the <b>squad spreadsheet</b> by using the buttons below.\n"
