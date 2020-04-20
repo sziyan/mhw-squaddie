@@ -665,9 +665,17 @@ def googledocs(update,context):
     if check_chat(update.message.chat.id):
         update.message.reply_html('<a href="https://docs.google.com/spreadsheets/d/1BOgecU-LdpHjZX_ruCRqoWgfzea-WTT9zYSnzmNzauA/edit#gid=0">Google Spreadsheet Link</a>')
 
-def help(update, context):
-    """Send a message when the command /help is issued."""
-    update.message.reply_text('Help!')
+def admin(update, context):
+    if check_chat((update.message.chat.id)):
+        all_admins_list = update.message.chat.get_administrators()
+        admins = []
+        for admin in all_admins_list:
+            user = admin.user.name
+            admins.append(user)
+        if '@sziyan' in admins:
+            admins.remove('@sziyan')
+        update.message.reply_html('Paging for admins.. \n{}'.format(', '.join(admins)))
+
 
 
 def error(update, context):
@@ -704,6 +712,7 @@ def main():
     dp.add_handler(CommandHandler('leaveevent', leaveevent))
     dp.add_handler(CommandHandler('googledocs', googledocs))
     dp.add_handler(CommandHandler('rules', rules))
+    dp.add_handler(CommandHandler('admin', admin))
 
     #Conversation handler
     conv_handler = ConversationHandler(
