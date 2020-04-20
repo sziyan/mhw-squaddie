@@ -11,4 +11,7 @@ deleteevent - Delete 1 of the planned event.
 session - Shows current squad session ID
 addsession - Adds current squad session ID
 deletesession - Removes squad session ID from list.
+rules - Display rules
+spreadsheet - Display spreadsheet
+admin - Page admins
 
