@@ -13,5 +13,5 @@ addsession - Adds current squad session ID
 deletesession - Removes squad session ID from list.
 rules - Display rules
 spreadsheet - Display spreadsheet
-admin - Page admins
+admin - Ping admins
 

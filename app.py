@@ -11,9 +11,8 @@ from datetime import datetime
 logging.basicConfig(level=logging.INFO, filename='output.log', filemode='a', format='%(asctime)s %(levelname)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 logging.info("Bot started succesfully.")
 api_key = Config.API_KEY
-#yt = YoutubeDataApi(api_key)
 
-reddit = praw.Reddit(user_agent="MHW-Squaddie Telegram Bot (by /u/lonerzboy)", client_id=Config.client_id, client_secret=Config.client_secret)
+reddit = praw.Reddit(user_agent="MHW-Squaddie Telegram Bot (by /u/PunyDev)", client_id=Config.client_id, client_secret=Config.client_secret)
 logging.info("PRAW instantiated successfully.")
 
 db = connect('sg', host=Config.host)
@@ -620,11 +619,15 @@ def addsession(update, context):
             update.message.reply_text("Syntax is /addsession <session id>.")
             return
         if Session.objects.count() >= 1:
-            update.message.reply_text("There is already an existing session. \n Join that instead.")
-            return
+            session = Session.objects[0]
+            s_id = "".join(context.args)
+            session_id = s_id[:4] + ' ' + s_id[4:8] + ' ' + s_id[8:12]
+            session.session_id = session_id
+            update.message.reply_html('Session ID updated to <b>{}</b>'.format(session_id))
+            db.close()
         else:
-            session_id = " ".join(context.args)
-            print(session_id)
+            s_id = "".join(context.args)
+            session_id = s_id[:4] + ' ' + s_id[4:8] + ' ' + s_id[8:12]
             session = Session(session_id=session_id)
             session.save()
             update.message.reply_html("<b>{}</b> added.".format(session_id))
@@ -638,9 +641,8 @@ def deletesession(update, context):
             return
         else:
             for session in Session.objects:
-                session_id = session.session_id
                 session.delete()
-                update.message.reply_html("<b>{}</b> deleted.".format(session_id))
+                update.message.reply_html("Session ID cleared")
             db.close()
 
 #Additional features

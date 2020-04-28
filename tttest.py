@@ -1,8 +1,6 @@
-test = [1,2,4,5]
-index = 1
-for i in test:
-    if index != i:
-        print('Missing number is {}.'.format(index))
-    index+=1
+text = 'thisthattoot'
+
+new_text = text[0:4] + ' ' + text[4:8] + ' ' + text[8:12]
+print(new_text)
 
 
