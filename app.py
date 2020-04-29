@@ -623,6 +623,7 @@ def addsession(update, context):
             s_id = "".join(context.args)
             session_id = s_id[:4] + ' ' + s_id[4:8] + ' ' + s_id[8:12]
             session.session_id = session_id
+            session.save()
             update.message.reply_html('Session ID updated to <b>{}</b>'.format(session_id))
             db.close()
         else:

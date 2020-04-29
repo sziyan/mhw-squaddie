@@ -1,6 +1,6 @@
 venv/ 
 config.py
-__pychache__/
+__pycache__/
 .idea/
 .git/
 Procfile

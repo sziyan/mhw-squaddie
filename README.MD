@@ -15,13 +15,14 @@ The following **session** commands are available:
 - /session
 - /deletesession
 
-The following **squad** management commands are available:
-New members to chat are automatically added to this list.
-- /pendingsquad
-- /invitedsquad <name>
+The following **event** comands are available:
+- /addevent
+- /checkevent
+- /deleteevent
+- /joinevent
 
-The following *fun* commands are available:
-- /youtube <search terms>
+Additional commands below:
+- /admin
 
 Reddit links are also replied with a summary of 100 words.
 
