@@ -53,7 +53,7 @@ async def on_message(message):
         await msg.add_reaction('🗑️')
 
     elif message.content.startswith('&announce'):
-        content = 'React to 🗑️ to mark a session as closed.'
+        content = 'Type /addsession in any chat to create session. \nReact to 🗑️ to mark a session as closed.'
         msg = await message.channel.send(content)
         await msg.pin()
 
