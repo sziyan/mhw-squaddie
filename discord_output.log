@@ -390,3 +390,57 @@
 04-May-20 00:01:25 INFO - Cleaning up tasks.
 04-May-20 00:01:25 INFO - Cleaning up after 4 tasks.
 04-May-20 00:01:25 INFO - Closing the event loop.
+04-May-20 21:24:08 INFO - Bot started succesfully.
+04-May-20 21:24:08 INFO - logging in using static token
+04-May-20 21:24:09 INFO - Created websocket connected to wss://gateway.discord.gg?encoding=json&v=6&compress=zlib-stream
+04-May-20 21:24:09 INFO - Shard ID None has sent the IDENTIFY payload.
+04-May-20 21:24:10 INFO - Shard ID None has connected to Gateway: ["gateway-prd-main-z4s5",{"micros":53780,"calls":["discord-sessions-prd-1-47",{"micros":51876,"calls":["start_session",{"micros":46175,"calls":["api-prd-main-us-east1-pzj3",{"micros":42973,"calls":["get_user",{"micros":2400},"add_authorized_ip",{"micros":2187},"get_guilds",{"micros":4778},"coros_wait",{"micros":2}]}]},"guilds_connect",{"micros":2,"calls":[]},"presence_connect",{"micros":1,"calls":[]}]}]}] (Session ID: 38acb67bf62feb78a825e0670bdab762).
+04-May-20 21:26:00 INFO - Received signal to terminate bot and event loop.
+04-May-20 21:26:00 INFO - Cleaning up tasks.
+04-May-20 21:26:00 INFO - Cleaning up after 4 tasks.
+04-May-20 21:26:00 INFO - Closing the event loop.
+04-May-20 21:26:02 INFO - Bot started succesfully.
+04-May-20 21:26:02 INFO - logging in using static token
+04-May-20 21:26:03 INFO - Created websocket connected to wss://gateway.discord.gg?encoding=json&v=6&compress=zlib-stream
+04-May-20 21:26:03 INFO - Shard ID None has sent the IDENTIFY payload.
+04-May-20 21:26:03 INFO - Shard ID None has connected to Gateway: ["gateway-prd-main-mc44",{"micros":44875,"calls":["discord-sessions-prd-1-43",{"micros":37499,"calls":["start_session",{"micros":32573,"calls":["api-prd-main-us-east1-nqv1",{"micros":30277,"calls":["get_user",{"micros":2030},"add_authorized_ip",{"micros":1764},"get_guilds",{"micros":6870},"coros_wait",{"micros":1}]}]},"guilds_connect",{"micros":1,"calls":[]},"presence_connect",{"micros":1,"calls":[]}]}]}] (Session ID: e51071daa34c9a08783e4b7db3b5dbfd).
+04-May-20 21:30:03 INFO - Received signal to terminate bot and event loop.
+04-May-20 21:30:03 INFO - Cleaning up tasks.
+04-May-20 21:30:03 INFO - Cleaning up after 4 tasks.
+04-May-20 21:30:06 INFO - Closing the event loop.
+04-May-20 21:30:52 INFO - Bot started succesfully.
+04-May-20 21:30:52 INFO - logging in using static token
+04-May-20 21:30:53 INFO - Created websocket connected to wss://gateway.discord.gg?encoding=json&v=6&compress=zlib-stream
+04-May-20 21:30:53 INFO - Shard ID None has sent the IDENTIFY payload.
+04-May-20 21:30:53 INFO - Shard ID None has connected to Gateway: ["gateway-prd-main-vjmm",{"micros":60087,"calls":["discord-sessions-prd-1-17",{"micros":51497,"calls":["start_session",{"micros":48187,"calls":["api-prd-main-us-east1-0tw8",{"micros":44618,"calls":["get_user",{"micros":5568},"add_authorized_ip",{"micros":3202},"get_guilds",{"micros":1875},"coros_wait",{"micros":1}]}]},"guilds_connect",{"micros":2,"calls":[]},"presence_connect",{"micros":1441,"calls":[]}]}]}] (Session ID: c453b31248b0079f95fd56244e0fec66).
+04-May-20 21:31:40 INFO - Received signal to terminate bot and event loop.
+04-May-20 21:31:40 INFO - Cleaning up tasks.
+04-May-20 21:31:40 INFO - Cleaning up after 4 tasks.
+04-May-20 21:31:41 INFO - Closing the event loop.
+04-May-20 21:31:42 INFO - Bot started succesfully.
+04-May-20 21:31:42 INFO - logging in using static token
+04-May-20 21:31:43 INFO - Created websocket connected to wss://gateway.discord.gg?encoding=json&v=6&compress=zlib-stream
+04-May-20 21:31:43 INFO - Shard ID None has sent the IDENTIFY payload.
+04-May-20 21:31:43 INFO - Shard ID None has connected to Gateway: ["gateway-prd-main-2sn6",{"micros":140653,"calls":["discord-sessions-prd-1-9",{"micros":139119,"calls":["start_session",{"micros":138006,"calls":["api-prd-main-us-east1-vwmb",{"micros":135105,"calls":["get_user",{"micros":14260},"add_authorized_ip",{"micros":4386},"get_guilds",{"micros":9724},"coros_wait",{"micros":1}]}]},"guilds_connect",{"micros":2,"calls":[]},"presence_connect",{"micros":4,"calls":[]}]}]}] (Session ID: b50bbe995a5aebf0885080e25ea56dea).
+04-May-20 21:33:24 INFO - Received signal to terminate bot and event loop.
+04-May-20 21:33:24 INFO - Cleaning up tasks.
+04-May-20 21:33:24 INFO - Cleaning up after 4 tasks.
+04-May-20 21:33:24 INFO - Closing the event loop.
+04-May-20 21:33:26 INFO - Bot started succesfully.
+04-May-20 21:33:26 INFO - logging in using static token
+04-May-20 21:33:27 INFO - Created websocket connected to wss://gateway.discord.gg?encoding=json&v=6&compress=zlib-stream
+04-May-20 21:33:27 INFO - Shard ID None has sent the IDENTIFY payload.
+04-May-20 21:33:27 INFO - Shard ID None has connected to Gateway: ["gateway-prd-main-2c0f",{"micros":42033,"calls":["discord-sessions-prd-1-60",{"micros":38892,"calls":["start_session",{"micros":35224,"calls":["api-prd-main-us-east1-kfvg",{"micros":31473,"calls":["get_user",{"micros":4303},"add_authorized_ip",{"micros":1760},"get_guilds",{"micros":1594},"coros_wait",{"micros":2}]}]},"guilds_connect",{"micros":2,"calls":[]},"presence_connect",{"micros":2234,"calls":[]}]}]}] (Session ID: 843b8a4a3a2d6b9401cbfb6265a972bf).
+04-May-20 21:35:10 INFO - Received signal to terminate bot and event loop.
+04-May-20 21:35:10 INFO - Cleaning up tasks.
+04-May-20 21:35:10 INFO - Cleaning up after 4 tasks.
+04-May-20 21:35:11 INFO - Closing the event loop.
+04-May-20 21:35:12 INFO - Bot started succesfully.
+04-May-20 21:35:12 INFO - logging in using static token
+04-May-20 21:35:13 INFO - Created websocket connected to wss://gateway.discord.gg?encoding=json&v=6&compress=zlib-stream
+04-May-20 21:35:13 INFO - Shard ID None has sent the IDENTIFY payload.
+04-May-20 21:35:14 INFO - Shard ID None has connected to Gateway: ["gateway-prd-main-pfkz",{"micros":101103,"calls":["discord-sessions-prd-1-38",{"micros":98409,"calls":["start_session",{"micros":95608,"calls":["api-prd-main-us-east1-h1pj",{"micros":91958,"calls":["get_user",{"micros":4580},"add_authorized_ip",{"micros":7206},"get_guilds",{"micros":8657},"coros_wait",{"micros":1}]}]},"guilds_connect",{"micros":2,"calls":[]},"presence_connect",{"micros":3,"calls":[]}]}]}] (Session ID: 8acb1cd20476444a7ec9fe428a40ac04).
+04-May-20 21:52:19 INFO - Received signal to terminate bot and event loop.
+04-May-20 21:52:19 INFO - Cleaning up tasks.
+04-May-20 21:52:19 INFO - Cleaning up after 4 tasks.
+04-May-20 21:52:19 INFO - Closing the event loop.

@@ -3,6 +3,8 @@ from config import Config
 import logging
 from mongoengine import *
 from mongoengine import connect
+import random
+import datetime
 
 client = discord.Client()
 logging.basicConfig(level=logging.INFO, filename='discord_output.log', filemode='a', format='%(asctime)s %(levelname)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
@@ -40,6 +42,7 @@ async def on_message(message):
     if message.content.startswith('/addsession'):
         channel = client.get_channel(706521000640249927) #asian squad
         #channel = client.get_channel(619171183006580767) #ascension testing
+        now = datetime.datetime.now().strftime('%d %b %I:%M %p')
         content = message.content[12:]
         if content == "":
             await message.channel.send('Please input session ID.')
@@ -48,18 +51,16 @@ async def on_message(message):
         description = '```fix\n{}```'.format(session)
         embed = discord.Embed(color=0xf1c40f)
         embed.add_field(name='Session ID', value=description)
+        embed.set_footer(text='Created on {}'.format(now))
         await message.delete()
         msg = await channel.send(embed=embed)
         await msg.add_reaction('🗑️')
 
-    elif message.content.startswith('&announce'):
+    elif message.content.startswith('&announce') and message.author.id == 100118233276764160:
         content = 'Type /addsession in any chat to create session. \nReact to 🗑️ to mark a session as closed.'
         msg = await message.channel.send(content)
         await msg.pin()
 
-    elif message.content.startswith('/channelid'):
-        channel_id = message.channel.id
-        print(channel_id)
 
 @client.event
 async def on_raw_reaction_add(payload):
@@ -82,6 +83,20 @@ async def on_raw_reaction_add(payload):
         if emoji_add == '🗑️':
             await channel.send('Session ID deleted..',delete_after=5.0)
             await message.delete()
+
+@client.event
+async def on_member_join(member):
+    newcomer = member.name
+    channel = client.get_channel(706466658373599253)
+    welcome_list = ["Keep your palicoes! **{}** is here to hunt!!".format(newcomer),
+                    "**{}** is here to slay some Great Jagras!".format(newcomer),
+                    "Here comes **{}**, the Rajang(ahem Rajunk) slayer!".format(newcomer),
+                    "Welcome **{}** to the Gathering Hall.".format(newcomer),
+                    "Thank the Elder dragons. **{}** is here to save us from Safi'jiiva!".format(newcomer),
+                    "🐋 cum **{}** to the hunting hall.".format(newcomer),
+                    "**{}** is here to cook us some raw meat.".format(newcomer)]
+    index = random.randrange(0, len(welcome_list), 1)
+    await channel.send('{}'.format(welcome_list[index]))
 
 
 # run discord bot

@@ -1,6 +1,5 @@
-text = 'thisthattoot'
+import datetime
 
-new_text = text[0:4] + ' ' + text[4:8] + ' ' + text[8:12]
-print(new_text)
-
+now = datetime.datetime.now()
+print(now.strftime('%d %b %I:%M %p'))
 
