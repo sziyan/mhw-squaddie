@@ -96,7 +96,7 @@ async def on_member_join(member):
                     "🐋 cum **{}** to the hunting hall.".format(newcomer),
                     "**{}** is here to cook us some raw meat.".format(newcomer)]
     index = random.randrange(0, len(welcome_list), 1)
-    await channel.send('{}'.format(welcome_list[index]))
+    await channel.send('```yaml\n{}\n```'.format(welcome_list[index]))
 
 
 # run discord bot
