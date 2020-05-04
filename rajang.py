@@ -118,7 +118,7 @@ async def on_member_join(member):
                     "**{}** is here to cook us some raw meat.".format(newcomer)]
     index = random.randrange(0, len(welcome_list), 1)
     await channel.send('{}`\nDrop by {} to say hi, or join us at {}'.format(welcome_list[index], general_channel.mention, session_id_channel.mention))
-    await member.add_roles(new_fiver)
+    #await member.add_roles(new_fiver)
 
 # run discord bot
 client.run(Config.discord_token)
