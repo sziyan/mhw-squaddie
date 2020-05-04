@@ -19,9 +19,6 @@ class Siege(Document):
     players = ListField()
     host = StringField(max_length=200, required=True)
 
-class Session(Document):
-    session_id = StringField(max_length=200, required = True)
-
 class Event(Document):
     event_id = IntField(min_value=1, required=True)
     time = StringField(max_length=200, required=True)
@@ -61,6 +58,21 @@ async def on_message(message):
         msg = await message.channel.send(content)
         await msg.pin()
 
+    elif message.content.startswith('&getserverid') and message.author.id == 100118233276764160:
+        for guild in client.guilds:
+            print('{} - {}'.format(guild.name, guild.id))
+        await message.delete()
+
+    elif message.content.startswith('&getroles'):
+        guild = client.get_guild(100919797646106624)
+        print(guild.roles)
+        await message.delete()
+
+    elif message.content.startswith('&setrules') and message.author.id == 100118233276764160:
+        channel = message.channel
+        msg = await channel.fetch_message(706491925649424434)
+        await msg.add_reaction('✅')
+        await message.delete()
 
 @client.event
 async def on_raw_reaction_add(payload):
@@ -83,11 +95,20 @@ async def on_raw_reaction_add(payload):
         if emoji_add == '🗑️':
             await channel.send('Session ID deleted..',delete_after=5.0)
             await message.delete()
+        elif emoji_add == '✅' and message_id == 706491925649424434:
+            guild = client.get_guild(706463594719608883)
+            new_fiver = guild.get_role(706870296334041088)
+            await user.remove_roles(new_fiver)
+
 
 @client.event
 async def on_member_join(member):
+    guild = client.get_guild(706463594719608883)
+    new_fiver = guild.get_role(706870296334041088)
     newcomer = member.name
     channel = client.get_channel(706463594719608886)
+    general_channel = client.get_channel(706466658373599253)
+    session_id_channel = client.get_channel(706466658373599253)
     welcome_list = ["Keep your palicoes! **{}** is here to hunt!!".format(newcomer),
                     "**{}** is here to slay some Great Jagras!".format(newcomer),
                     "Here comes **{}**, the Rajang(ahem Rajunk) slayer!".format(newcomer),
@@ -96,8 +117,8 @@ async def on_member_join(member):
                     "🐋 cum **{}** to the hunting hall.".format(newcomer),
                     "**{}** is here to cook us some raw meat.".format(newcomer)]
     index = random.randrange(0, len(welcome_list), 1)
-    await channel.send('```yaml\n{}\n```'.format(welcome_list[index]))
-
+    await channel.send('{}`\nDrop by {} to say hi, or join us at {}'.format(welcome_list[index], general_channel.mention, session_id_channel.mention))
+    await member.add_roles(new_fiver)
 
 # run discord bot
 client.run(Config.discord_token)
