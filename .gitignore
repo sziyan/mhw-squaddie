@@ -5,3 +5,4 @@ __pycache__/
 .git/
 Procfile
 output.log
+discord_output.log

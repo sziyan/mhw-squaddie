@@ -87,7 +87,7 @@ async def on_raw_reaction_add(payload):
 @client.event
 async def on_member_join(member):
     newcomer = member.name
-    channel = client.get_channel(706466658373599253)
+    channel = client.get_channel(706463594719608886)
     welcome_list = ["Keep your palicoes! **{}** is here to hunt!!".format(newcomer),
                     "**{}** is here to slay some Great Jagras!".format(newcomer),
                     "Here comes **{}**, the Rajang(ahem Rajunk) slayer!".format(newcomer),
