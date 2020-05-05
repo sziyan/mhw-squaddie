@@ -40,25 +40,25 @@ async def on_message(message):
         channel = client.get_channel(706521000640249927) #asian squad
         #channel = client.get_channel(619171183006580767) #ascension testing
         now = datetime.datetime.now().strftime('%d %b %I:%M %p')
-        prompt_session_id = None
-        prompt_session_title = None
+        prompt_session_id, prompt_session_title, session_id_reply, session_title_reply = None,None,None,None
+
         content = message.content[12:]
         if content == "":
             prompt_session_id = await message.channel.send('Setting new session.. Whats the session ID?')
             def check_session_id(m):
                 return m.channel == message.channel and m.author == message.author
-            session = await client.wait_for('message', check=check_session_id)
-            session = session.content
+            session_id_reply = await client.wait_for('message', check=check_session_id)
+            session = session_id_reply.content
 
             prompt_session_title = await message.channel.send('Any specific goals for the session? (Type cancel for general hunting)')
             def check_session_title(m):
                 return m.channel == message.channel and m.author == message.author
-            session_title = await client.wait_for('message', check=check_session_title)
+            session_title_reply = await client.wait_for('message', check=check_session_title)
 
-            if session_title.content.lower() == 'cancel':
+            if session_title_reply.content.lower() == 'cancel':
                 session_title = 'Monster Hunting'
             else:
-                session_title = session_title.content
+                session_title = session_title_reply.content
 
             await message.channel.send('Session created in {}'.format(channel.mention), delete_after=5.0)
         else:
@@ -76,8 +76,10 @@ async def on_message(message):
         await message.delete()
         if prompt_session_id is not None:
             await prompt_session_id.delete()
+            await session_id_reply.delete()
         if prompt_session_title is not None:
             await prompt_session_title.delete()
+            await session_title_reply.delete()
 
 
 
