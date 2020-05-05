@@ -575,7 +575,7 @@ def new_member(update,context):
         for member in update.message.new_chat_members:
             newcomer = member.first_name
             keyboard = [[InlineKeyboardButton("Rules", url='https://telegra.ph/Rules-and-Community-Guidelines-04-05'),
-                         InlineKeyboardButton("Squad Spreadsheet", url='https://docs.google.com/spreadsheets/d/1BOgecU-LdpHjZX_ruCRqoWgfzea-WTT9zYSnzmNzauA/edit#gid=0')]]
+                         InlineKeyboardButton("Squad Spreadsheet", url='https://docs.google.com/spreadsheets/d/1BOgecU-LdpHjZX_ruCRqoWgfzea-WTT9zYSnzmNzauA/edit#gid=0')], InlineKeyboardButton('Discord', url='https://discord.gg/kPcArjT')]
             reply_markup = InlineKeyboardMarkup(keyboard)
             welcome_list = ["Keep your palicoes! <b>{}</b> is here to hunt!!".format(newcomer),
                             "<b>{}</b> is here to slay some Great Jagras!".format(newcomer),
@@ -586,7 +586,7 @@ def new_member(update,context):
                             "<b>{}</b> is here to cook us some raw meat.".format(newcomer)]
             index = random.randrange(0,len(welcome_list),1)
             update.message.reply_html("{} \nMake sure to read the <b>rules</b> and add your PSN ID/IGN to the <b>squad spreadsheet</b> by using the buttons below.\n"
-                                      "Tag @zacharylky / @bloodychaos / @DeadKuma for invitation to squad. Party up and have fun hunting!".format(welcome_list[index]), reply_markup=reply_markup)
+                                      "We have started our migration to Discord! Join us there!".format(welcome_list[index]), reply_markup=reply_markup)
 
 def member_left(update,context):
     if check_chat(update.message.chat.id):

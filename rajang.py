@@ -96,9 +96,10 @@ async def on_raw_reaction_add(payload):
             await channel.send('Session ID deleted..',delete_after=5.0)
             await message.delete()
         elif emoji_add == '✅' and message_id == 706491925649424434:
-            guild = client.get_guild(706463594719608883)
+            member = payload.member
+            guild = message.guild
             new_fiver = guild.get_role(706870296334041088)
-            await user.remove_roles(new_fiver)
+            await member.remove_roles(new_fiver)
 
 
 @client.event
@@ -117,7 +118,7 @@ async def on_member_join(member):
                     "🐋 cum **{}** to the hunting hall.".format(newcomer),
                     "**{}** is here to cook us some raw meat.".format(newcomer)]
     index = random.randrange(0, len(welcome_list), 1)
-    await channel.send('{}`\nDrop by {} to say hi, or join our squad sessions at {}'.format(welcome_list[index], general_channel.mention, session_id_channel.mention))
+    await channel.send('{}\nDrop by {} to say hi, or join our squad sessions at {}'.format(welcome_list[index], general_channel.mention, session_id_channel.mention))
     #await member.add_roles(new_fiver)
 
 # run discord bot
