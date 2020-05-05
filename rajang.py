@@ -40,18 +40,46 @@ async def on_message(message):
         channel = client.get_channel(706521000640249927) #asian squad
         #channel = client.get_channel(619171183006580767) #ascension testing
         now = datetime.datetime.now().strftime('%d %b %I:%M %p')
+        prompt_session_id = None
+        prompt_session_title = None
         content = message.content[12:]
         if content == "":
-            await message.channel.send('Please input session ID.')
-        session = "".join(content.split())
-        session = session[:4] + ' ' + session[4:8] + ' ' + session[8:12]
-        description = '```fix\n{}```'.format(session)
-        embed = discord.Embed(color=0xf1c40f)
-        embed.add_field(name='Session ID', value=description)
-        embed.set_footer(text='Created on {}'.format(now))
-        await message.delete()
+            prompt_session_id = await message.channel.send('Setting new session.. Whats the session ID?')
+            def check_session_id(m):
+                return m.channel == message.channel and m.author == message.author
+            session = await client.wait_for('message', check=check_session_id)
+            session = session.content
+
+            prompt_session_title = await message.channel.send('Any specific goals for the session? (Type cancel for general hunting)')
+            def check_session_title(m):
+                return m.channel == message.channel and m.author == message.author
+            session_title = await client.wait_for('message', check=check_session_title)
+
+            if session_title.content.lower() == 'cancel':
+                session_title = 'Monster Hunting'
+            else:
+                session_title = session_title.content
+
+            await message.channel.send('Session created in {}'.format(channel.mention), delete_after=5.0)
+        else:
+            session = "".join(content.split())
+            session = session[:4] + ' ' + session[4:8] + ' ' + session[8:12]
+            session_title = 'Monster Hunting'
+        title = '{}'.format(session_title)
+        session_id = '```fix\n{}```'.format(session)
+        embed = discord.Embed(title=title, color=0xf1c40f)
+        embed.add_field(name='Session ID', value=session_id)
+        embed.set_footer(text='Added on {}'.format(now))
+        embed.set_author(name=message.author.display_name,icon_url=message.author.avatar_url)
         msg = await channel.send(embed=embed)
         await msg.add_reaction('🗑️')
+        await message.delete()
+        if prompt_session_id is not None:
+            await prompt_session_id.delete()
+        if prompt_session_title is not None:
+            await prompt_session_title.delete()
+
+
 
     elif message.content.startswith('&announce') and message.author.id == 100118233276764160:
         content = 'Type /addsession in any chat to create session. \nReact to 🗑️ to mark a session as closed.'
@@ -64,7 +92,7 @@ async def on_message(message):
         await message.delete()
 
     elif message.content.startswith('&getroles'):
-        guild = client.get_guild(100919797646106624)
+        guild = message.guild
         print(guild.roles)
         await message.delete()
 
@@ -72,6 +100,12 @@ async def on_message(message):
         channel = message.channel
         msg = await channel.fetch_message(706491925649424434)
         await msg.add_reaction('✅')
+        await message.delete()
+
+    elif message.content.startswith('&removerules'):
+        channel = message.channel
+        msg = await channel.fetch_message(706491925649424434)
+        await msg.remove_reaction('✅', message.author)
         await message.delete()
 
 @client.event
@@ -96,10 +130,12 @@ async def on_raw_reaction_add(payload):
             await channel.send('Session ID deleted..',delete_after=5.0)
             await message.delete()
         elif emoji_add == '✅' and message_id == 706491925649424434:
+            rules_message = await channel.fetch_message(706491925649424434)
             member = payload.member
             guild = message.guild
             new_fiver = guild.get_role(706870296334041088)
             await member.remove_roles(new_fiver)
+            await rules_message.remove_reaction('✅', member)
 
 
 @client.event
@@ -119,7 +155,7 @@ async def on_member_join(member):
                     "**{}** is here to cook us some raw meat.".format(newcomer)]
     index = random.randrange(0, len(welcome_list), 1)
     await channel.send('{}\nDrop by {} to say hi, or join our squad sessions at {}'.format(welcome_list[index], general_channel.mention, session_id_channel.mention))
-    #await member.add_roles(new_fiver)
+    await member.add_roles(new_fiver)
 
 # run discord bot
 client.run(Config.discord_token)
