@@ -148,6 +148,7 @@ async def on_member_join(member):
     channel = client.get_channel(706463594719608886)
     general_channel = client.get_channel(706466658373599253)
     session_id_channel = client.get_channel(706521000640249927)
+    read_first_channel = client.get_channel(706477462183346277)
     welcome_list = ["Keep your palicoes! **{}** is here to hunt!!".format(newcomer),
                     "**{}** is here to slay some Great Jagras!".format(newcomer),
                     "Here comes **{}**, the Rajang(ahem Rajunk) slayer!".format(newcomer),
@@ -156,7 +157,7 @@ async def on_member_join(member):
                     "🐋 cum **{}** to the hunting hall.".format(newcomer),
                     "**{}** is here to cook us some raw meat.".format(newcomer)]
     index = random.randrange(0, len(welcome_list), 1)
-    await channel.send('{}\nDrop by {} to say hi, or join our squad sessions at {}'.format(welcome_list[index], general_channel.mention, session_id_channel.mention))
+    await channel.send('{}\nMake sure to read {}, drop by {} to say hi, and join our squad sessions at {}'.format(welcome_list[index],read_first_channel.mention, general_channel.mention, session_id_channel.mention))
     await member.add_roles(new_fiver)
 
 # run discord bot
