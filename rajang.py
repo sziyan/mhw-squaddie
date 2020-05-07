@@ -309,18 +309,18 @@ async def on_raw_reaction_remove(payload):
 async def on_member_join(member):
     guild = client.get_guild(706463594719608883)
     new_fiver = guild.get_role(706870296334041088)
-    newcomer = member.name
+    newcomer = member.mention
     channel = client.get_channel(706463594719608886)
     general_channel = client.get_channel(706466658373599253)
     session_id_channel = client.get_channel(706521000640249927)
     read_first_channel = client.get_channel(706477462183346277)
-    welcome_list = ["Keep your palicoes! **{}** is here to hunt!!".format(newcomer),
-                    "**{}** is here to slay some Great Jagras!".format(newcomer),
-                    "Here comes **{}**, the Rajang(ahem Rajunk) slayer!".format(newcomer),
-                    "Welcome **{}** to the Gathering Hall.".format(newcomer),
-                    "Thank the Elder dragons. **{}** is here to save us from Safi'jiiva!".format(newcomer),
-                    "🐋 cum **{}** to the hunting hall.".format(newcomer),
-                    "**{}** is here to cook us some raw meat.".format(newcomer)]
+    welcome_list = ["Keep your palicoes! {} is here to hunt!!".format(newcomer),
+                    "{} is here to slay some Great Jagras!".format(newcomer),
+                    "Here comes {}, the Rajang(ahem Rajunk) slayer!".format(newcomer),
+                    "Welcome {} to the Gathering Hall.".format(newcomer),
+                    "Thank the Elder dragons. {} is here to save us from Safi'jiiva!".format(newcomer),
+                    "🐋 cum {} to the hunting hall.".format(newcomer),
+                    "{} is here to cook us some raw meat.".format(newcomer)]
     index = random.randrange(0, len(welcome_list), 1)
     await channel.send('{}\nMake sure to read {}, drop by {} to say hi, and join our squad sessions at {}'.format(welcome_list[index],read_first_channel.mention, general_channel.mention, session_id_channel.mention))
     await member.add_roles(new_fiver)
