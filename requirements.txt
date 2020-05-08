@@ -28,4 +28,4 @@ urllib3==1.25.7
 websocket-client==0.57.0
 websockets==8.1
 yarl==1.4.2
-
+youtube-data-api==0.0.17
