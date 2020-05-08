@@ -11,6 +11,8 @@ logging.basicConfig(level=logging.INFO, filename='discord_output.log', filemode=
 logging.info("Bot started succesfully.")
 
 db = connect('sg', host=Config.host)
+#mod_role_name = [The Asian Squad - GrandBotMaster, Ascenion - Admin]
+MOD_ROLE_ID = [706468834235645954, 100920245190946816]
 
 class Siege(Document):
     siege_id = IntField(min_value=1, required=True)
@@ -84,34 +86,31 @@ async def on_message(message):
 
     elif message.content.startswith('/help'):
         content = 'Available commands are: \n' \
-                  '/addsession <session_id> - Adds a session with the given session ID \n' \
-                  '/addsession - Bot will prompt you on what is the session ID \n' \
-                  '/help - This help message.'
+                  '`/addsession <session_id>` - Adds a session with the given session ID \n' \
+                  '`/addsession` - Bot will prompt you on what is the session ID \n' \
+                  '`/help` - This help message.'
         await message.channel.send(content)
 
     # elif message.content.startswith('!test'):
-    #     #     #guild = message.guild
-    #     #     emoji = client.get_emoji(636056095424643074)
-    #     #     msg = await message.channel.send(emoji)
-    #     #     await msg.add_reaction(emoji)
+    #     await message.channel.send(message.author.top_role.id)
 
 ############## ADMIN COMMANDS ###################
 
     elif message.content.startswith('&logoff'):
         member = message.author
         top_role = member.top_role
-        if top_role.id != 706468834235645954:
+        if top_role.id not in MOD_ROLE_ID:
             return
         else:
+            await message.delete()
             await client.close()
 
     elif message.content.startswith('&announce'):
         member = message.author
         ask_reaction = True
-        msg = ""
         reaction_list = []
         top_role = member.top_role
-        if top_role.id != 706468834235645954:
+        if top_role.id not in MOD_ROLE_ID:
             return
         else:
             prompt_pin_message = await message.channel.send('What is the content of pinned message?', delete_after=30.0)
@@ -141,21 +140,29 @@ async def on_message(message):
                         except:
                             pass
                     ask_reaction = False
-
-            await msg.pin()
             await prompt_pin_message.delete()
             await pinned_message.delete()
             await message.delete()
 
 
     elif message.content.startswith('&getserverid') and message.author.id == 100118233276764160:
-        for guild in client.guilds:
-            print('{} - {}'.format(guild.name, guild.id))
+        member = message.author
+        top_role = member.top_role
+        if top_role.id not in MOD_ROLE_ID:
+            return
+        else:
+            for guild in client.guilds:
+                print('{} - {}'.format(guild.name, guild.id))
         await message.delete()
 
     elif message.content.startswith('&getroles'):
-        guild = message.guild
-        print(guild.roles)
+        member = message.author
+        top_role = member.top_role
+        if top_role.id not in MOD_ROLE_ID:
+            return
+        else:
+            guild = message.guild
+            print(guild.roles)
         await message.delete()
 
     elif message.content.startswith('&setrules') and message.author.id == 100118233276764160:
@@ -173,7 +180,7 @@ async def on_message(message):
     elif message.content.startswith('&setsosmessage'):
         member = message.author
         top_role = member.top_role
-        if top_role.id != 706468834235645954:
+        if top_role.id not in MOD_ROLE_ID:
             return
         else:
             prompt_sos_msg = await message.channel.send('What is the new sos message?')
@@ -267,8 +274,17 @@ async def on_raw_reaction_add(payload):
             await message.delete()
 
         elif emoji_add == '❌':
-            await channel.send('Event deleted..', delete_after=5.0)
-            await message.delete()
+            member = payload.member.mention
+            embed = message.embeds[0]
+            fields = embed.fields
+            players = fields[1].value
+            host = players.split()[0]
+            if member == host:
+                await channel.send('Event deleted..', delete_after=5.0)
+                await message.delete()
+            else:
+                await channel.send('{}, event can only be deleted by the 1st player in the player list.'.format(member), delete_after=5.0)
+                await message.remove_reaction('❌', payload.member)
 
 
 
