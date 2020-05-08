@@ -75,7 +75,8 @@ async def on_message(message):
         embed.set_footer(text='Added on {}'.format(now))
         embed.set_author(name=message.author.display_name,icon_url=message.author.avatar_url)
         msg = await channel.send(embed=embed)
-        await msg.add_reaction('🗑️')
+        cemoji = await message.guild.fetch_emoji(707541604508106818)  #custom emoji to mark session close
+        await msg.add_reaction(cemoji)
         await message.delete()
         if prompt_session_id is not None:
             await prompt_session_id.delete()
@@ -209,17 +210,23 @@ async def on_raw_reaction_add(payload):
     channel_id = payload.channel_id
     channel = client.get_channel(channel_id)
     message = await channel.fetch_message(message_id)
-    emoji_add = payload.emoji.name #emoji that user added
     user = client.get_user(payload.user_id)
     bot_added_reactions = message.reactions #reactions that was added by bot in message
+    if payload.emoji.is_custom_emoji() is True: #if user add emoji is custom
+        emoji_add = payload.emoji.id  #set emoji_add to emoji id
+    else:
+        emoji_add = payload.emoji.name #else set to emoji name
+
     list_of_reactions = []
 
     for reaction in bot_added_reactions:
-        list_of_reactions.append(reaction.emoji)
+        try:
+            list_of_reactions.append(reaction.emoji.id) #if can get emoji id means custom emoji
+        except:
+            list_of_reactions.append(reaction.emoji) #if not is unicode emoji
 
     if message.author.id == user.id:
         return
-
 
     if emoji_add in list_of_reactions:
         if emoji_add == '✅' and message_id == 706491925649424434:
@@ -230,7 +237,7 @@ async def on_raw_reaction_add(payload):
             await member.remove_roles(new_fiver)
             await rules_message.remove_reaction('✅', member)
 
-        elif emoji_add == '😍':
+        elif emoji_add == '⚔️':
             now = datetime.datetime.now().strftime('%d %b %I:%M %p')
             member = payload.member
             await message.remove_reaction(emoji_add, member)
@@ -251,7 +258,6 @@ async def on_raw_reaction_add(payload):
             msg = await message.channel.send(embed=e)
             await msg.add_reaction('👍')
             await msg.add_reaction('❌')
-
             await prompt_event_title.delete()
             await prompt_time.delete()
             await event_title.delete()
@@ -269,7 +275,7 @@ async def on_raw_reaction_add(payload):
                 embed.set_field_at(1, name='Players', value=new_players, inline=False)
                 await message.edit(embed=embed)
 
-        elif emoji_add == '🗑️':
+        elif emoji_add == 707541604508106818:
             await channel.send('Session ID deleted..', delete_after=5.0)
             await message.delete()
 
@@ -285,7 +291,6 @@ async def on_raw_reaction_add(payload):
             else:
                 await channel.send('{}, event can only be deleted by the 1st player in the player list.'.format(member), delete_after=5.0)
                 await message.remove_reaction('❌', payload.member)
-
 
 
 @client.event
