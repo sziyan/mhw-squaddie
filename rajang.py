@@ -5,6 +5,8 @@ from mongoengine import *
 from mongoengine import connect
 import random
 import datetime
+import asyncio.exceptions
+import discord.errors
 
 client = discord.Client()
 logging.basicConfig(level=logging.INFO, filename='discord_output.log', filemode='a', format='%(asctime)s %(levelname)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
@@ -114,17 +116,17 @@ async def on_message(message):
         if top_role.id not in MOD_ROLE_ID:
             return
         else:
-            prompt_pin_message = await message.channel.send('What is the content of pinned message?', delete_after=30.0)
+            prompt_pin_message = await message.channel.send('What is the content of pinned message?', delete_after=60.0)
             def check_msg(m):
                 return m.channel == message.channel and m.author == message.author
-            pinned_message = await client.wait_for('message', check=check_msg, timeout=30.0)
+            pinned_message = await client.wait_for('message', check=check_msg, timeout=60.0)
 
             while ask_reaction is True:
-                prompt_reaction = await message.channel.send('Send me a emoji for the reaction(type `cancel` to cancel reaction adding.)', delete_after=30.0)
+                prompt_reaction = await message.channel.send('Send me a emoji for the reaction(type `cancel` to cancel reaction adding.)', delete_after=60.0)
 
                 def check_emoji(m):
                     return m.channel == message.channel and m.author == message.author
-                reaction_check = await client.wait_for('message', check=check_emoji, timeout=30.0)
+                reaction_check = await client.wait_for('message', check=check_emoji, timeout=60.0)
 
                 if reaction_check.content != 'cancel':
                     reaction = reaction_check
@@ -222,14 +224,14 @@ async def on_raw_reaction_add(payload):
     for reaction in bot_added_reactions:
         try:
             list_of_reactions.append(reaction.emoji.id) #if can get emoji id means custom emoji
-        except:
+        except AttributeError:
             list_of_reactions.append(reaction.emoji) #if not is unicode emoji
 
     if message.author.id == user.id:
         return
 
     if emoji_add in list_of_reactions:
-        if emoji_add == '✅' and message_id == 706491925649424434:
+        if emoji_add == '✅' and message_id == 706491925649424434: #rules messsage id
             rules_message = await channel.fetch_message(706491925649424434)
             member = payload.member
             guild = message.guild
@@ -237,31 +239,113 @@ async def on_raw_reaction_add(payload):
             await member.remove_roles(new_fiver)
             await rules_message.remove_reaction('✅', member)
 
-        elif emoji_add == '⚔️':
+        elif emoji_add == 707790768324083732:   #create event :zinsigh:
             now = datetime.datetime.now().strftime('%d %b %I:%M %p')
             member = payload.member
-            await message.remove_reaction(emoji_add, member)
-            prompt_event_title = await message.channel.send('What is the name of event?', delete_after=30.0)
-            def check_event(m):
-                return m.author == member and m.channel == channel
-            event_title = await client.wait_for('message', check=check_event, timeout=30.0)
-            prompt_time = await message.channel.send('What time is the event?', delete_after=30.0)
-            def check_time(m):
-                return m.author == member and m.channel == message.channel
-            event_time = await client.wait_for('message', check=check_time, timeout=30.0)
-            event_title_description = '```fix\n{}\n```'.format(event_title.content)
-            e = discord.Embed(title='Event!!',description=event_title_description)
-            e.add_field(name='Time (GMT+8)', value=event_time.content, inline=False)
-            e.add_field(name='Players', value=member.mention, inline=False)
-            e.set_footer(text='Added on {}'.format(now))
-            e.set_author(name=member.display_name, icon_url=member.avatar_url)
-            msg = await message.channel.send(embed=e)
-            await msg.add_reaction('👍')
-            await msg.add_reaction('❌')
-            await prompt_event_title.delete()
-            await prompt_time.delete()
-            await event_title.delete()
-            await event_time.delete()
+            cemoji = await message.guild.fetch_emoji(707790768324083732)
+            lfg_channel = message.guild.get_channel(706464926423711804)
+            await message.remove_reaction(cemoji, member)
+            try:
+                prompt_event_title = await message.channel.send('{} Name of monster to hunt?(Type `cancel` to stop)'.format(member.mention), delete_after=30.0)
+                def check_event(m):
+                    return m.author == member and m.channel == channel
+                event_title = await client.wait_for('message', check=check_event, timeout=30.0)
+                if event_title.content.lower() == 'cancel':
+                    return
+                prompt_time = await message.channel.send('{} What time is the event?(Type `cancel` to stop)'.format(member.mention), delete_after=30.0)
+                def check_time(m):
+                    return m.author == member and m.channel == message.channel
+                event_time = await client.wait_for('message', check=check_time, timeout=30.0)
+                if event_time.content.lower() == 'cancel':
+                    await event_time.delete()
+                    return
+                event_title_description = '```fix\n{}\n```'.format(event_title.content)
+                e = discord.Embed(description=event_title_description)
+                e.add_field(name='Time (GMT+8)', value=event_time.content, inline=False)
+                e.add_field(name='Players: 1', value=member.mention, inline=False)
+                e.set_footer(text='Added on {}. Click 👍 to join/unjoin event, ❌ to close event.'.format(now))
+                e.set_author(name=member.display_name, icon_url=member.avatar_url)
+                msg = await message.channel.send(embed=e)
+                await msg.add_reaction('👍')
+                await msg.add_reaction('❌')
+                await msg.pin()
+                last_message = await channel.fetch_message(channel.last_message_id)
+                if last_message.type == discord.MessageType.pins_add:
+                    await last_message.delete()
+                await lfg_channel.send('A LFG has been posted at {}.'.format(channel.mention))
+            except asyncio.exceptions.TimeoutError:
+                pass
+            finally:
+                try:
+                    await prompt_event_title.delete()
+                    await event_title.delete()
+                    await prompt_time.delete()
+                    await event_time.delete()
+                except discord.errors.NotFound:
+                    pass
+                except UnboundLocalError:
+                    pass
+
+
+        elif emoji_add == 707790900927135765:   #create siege :xenoeyes:
+            cemoji = await message.guild.fetch_emoji(707790900927135765)
+            now = datetime.datetime.now().strftime('%d %b %I:%M %p')
+            member = payload.member
+            lfg_channel = message.guild.get_channel(706464926423711804)
+            await message.remove_reaction(cemoji, member)
+            prompt_siege = await message.channel.send('❗ for Safi jiiva siege, ‼️ for Kulve Taroth siege.', delete_after=30.0)
+            await prompt_siege.add_reaction('❗')
+            await prompt_siege.add_reaction('‼️')
+            try:
+                def check_siege(reaction, user):
+                    return user==payload.member and (str(reaction.emoji) == '❗' or str(reaction.emoji) == '‼️')
+
+                siege_reaction, member = await client.wait_for('reaction_add', check=check_siege, timeout=30.0)
+                await prompt_siege.delete()
+
+                if str(siege_reaction) == '❗':
+                    siege_monster = "Safi'jiiva"
+                else:
+                    siege_monster = 'Kulve Taroth'
+
+                prompt_time = await message.channel.send('{}, What is the time for siege? (Type `cancel` to stop)'.format(member.mention))
+                if prompt_time.content.lower() == 'cancel':
+                    return
+
+                def check_time(m):
+                    return m.author == member and m.channel == channel
+
+                siege_time = await client.wait_for('message', check=check_time, timeout=30.0)
+                if siege_time.content.lower() == 'cancel':
+                    return
+
+                siege_monster_desc = '```fix\n{}\n```'.format(siege_monster)
+                e = discord.Embed(description=siege_monster_desc)
+                e.add_field(name='Time (GMT+8)', value=siege_time.content, inline=False)
+                e.add_field(name='Players: 1', value=member.mention, inline=False)
+                e.set_footer(text='Added on {}. Click 👍 to join/leave siege, ❌ to close siege.'.format(now))
+                if siege_monster == "Safi'jiiva":
+                    e.set_thumbnail(url='https://vignette.wikia.nocookie.net/monsterhunter/images/f/fa/MHWI-Safi%27jiiva_Icon.png/revision/latest/scale-to-width-down/340?cb=20191207161325')
+                else:
+                    e.set_thumbnail(url='https://ih0.redbubble.net/image.551722156.9913/flat,550x550,075,f.u3.jpg')
+                e.set_author(name=member.display_name, icon_url=member.avatar_url)
+                msg = await message.channel.send(embed=e)
+                await msg.add_reaction('👍')
+                await msg.add_reaction('❌')
+                await msg.pin()
+                last_message = await channel.fetch_message(channel.last_message_id)
+                if last_message.type == discord.MessageType.pins_add:
+                    await last_message.delete()
+                await lfg_channel.send('A LFG has been posted at {}.'.format(channel.mention))
+            except asyncio.exceptions.TimeoutError:
+                pass
+            finally:
+                try:
+                    await prompt_time.delete()
+                    await siege_time.delete()
+                except discord.errors.NotFound:
+                    pass
+
 
         elif emoji_add == '👍':
             member = payload.member.mention
@@ -272,10 +356,11 @@ async def on_raw_reaction_add(payload):
             if member not in list_of_players:
                 list_of_players.append(member)
                 new_players = '\n'.join(list_of_players)
-                embed.set_field_at(1, name='Players', value=new_players, inline=False)
+                no_of_players = len(list_of_players)
+                embed.set_field_at(1, name='Players: ({})'.format(no_of_players), value=new_players, inline=False)
                 await message.edit(embed=embed)
 
-        elif emoji_add == 707541604508106818:
+        elif emoji_add == 707541604508106818:   #mark session closed :fail:
             await channel.send('Session ID deleted..', delete_after=5.0)
             await message.delete()
 
@@ -286,11 +371,12 @@ async def on_raw_reaction_add(payload):
             players = fields[1].value
             host = players.split()[0]
             if member == host:
-                await channel.send('Event deleted..', delete_after=5.0)
+                await channel.send('Post deleted..', delete_after=5.0)
                 await message.delete()
             else:
-                await channel.send('{}, event can only be deleted by the 1st player in the player list.'.format(member), delete_after=5.0)
+                await channel.send('{}, Post can only be deleted by the 1st player in the player list.'.format(member), delete_after=5.0)
                 await message.remove_reaction('❌', payload.member)
+
 
 
 @client.event
@@ -321,7 +407,8 @@ async def on_raw_reaction_remove(payload):
                 if member in list_of_players:
                     list_of_players.remove(member)
                     new_players = ('\n').join(list_of_players)
-                    embed.set_field_at(1, name='Players', value=new_players, inline=False)
+                    no_of_players = len(list_of_players)
+                    embed.set_field_at(1, name='Players: {}'.format(no_of_players), value=new_players, inline=False)
                     await message.edit(embed=embed)
             except discord.errors.HTTPException:
                 pass
