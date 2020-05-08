@@ -243,7 +243,7 @@ async def on_raw_reaction_add(payload):
             now = datetime.datetime.now().strftime('%d %b %I:%M %p')
             member = payload.member
             cemoji = await message.guild.fetch_emoji(707790768324083732)
-            lfg_channel = message.guild.get_channel(706464926423711804)
+            quest_board_channel = message.guild.get_channel(708369949831200841)
             await message.remove_reaction(cemoji, member)
             try:
                 prompt_event_title = await message.channel.send('{} Name of monster to hunt?(Type `cancel` to stop)'.format(member.mention), delete_after=30.0)
@@ -265,14 +265,10 @@ async def on_raw_reaction_add(payload):
                 e.add_field(name='Players: 1', value=member.mention, inline=False)
                 e.set_footer(text='Added on {}. Click 👍 to join/unjoin event, ❌ to close event.'.format(now))
                 e.set_author(name=member.display_name, icon_url=member.avatar_url)
-                msg = await message.channel.send(embed=e)
+                msg = await quest_board_channel.send(embed=e)
                 await msg.add_reaction('👍')
                 await msg.add_reaction('❌')
-                await msg.pin()
-                last_message = await channel.fetch_message(channel.last_message_id)
-                if last_message.type == discord.MessageType.pins_add:
-                    await last_message.delete()
-                await lfg_channel.send('A LFG has been posted at {}.'.format(channel.mention))
+                await message.channel.send('LFG has been posted at {}.'.format(quest_board_channel.mention),delete_after=5.0)
             except asyncio.exceptions.TimeoutError:
                 pass
             finally:
@@ -291,7 +287,7 @@ async def on_raw_reaction_add(payload):
             cemoji = await message.guild.fetch_emoji(707790900927135765)
             now = datetime.datetime.now().strftime('%d %b %I:%M %p')
             member = payload.member
-            lfg_channel = message.guild.get_channel(706464926423711804)
+            quest_board_channel = message.guild.get_channel(708369949831200841)
             await message.remove_reaction(cemoji, member)
             prompt_siege = await message.channel.send('❗ for Safi jiiva siege, ‼️ for Kulve Taroth siege.', delete_after=30.0)
             await prompt_siege.add_reaction('❗')
@@ -329,14 +325,11 @@ async def on_raw_reaction_add(payload):
                 else:
                     e.set_thumbnail(url='https://ih0.redbubble.net/image.551722156.9913/flat,550x550,075,f.u3.jpg')
                 e.set_author(name=member.display_name, icon_url=member.avatar_url)
-                msg = await message.channel.send(embed=e)
+                msg = await quest_board_channel.send(embed=e)
                 await msg.add_reaction('👍')
                 await msg.add_reaction('❌')
-                await msg.pin()
-                last_message = await channel.fetch_message(channel.last_message_id)
-                if last_message.type == discord.MessageType.pins_add:
-                    await last_message.delete()
-                await lfg_channel.send('A LFG has been posted at {}.'.format(channel.mention))
+
+                await channel.send('LFG has been posted at {}.'.format(quest_board_channel.mention), delete_after=5.0)
             except asyncio.exceptions.TimeoutError:
                 pass
             finally:
