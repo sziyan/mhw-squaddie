@@ -317,7 +317,7 @@ async def on_raw_reaction_add(payload):
                 e = discord.Embed(description=siege_monster_desc)
                 e.add_field(name='Time (GMT+8)', value=siege_time.content, inline=False)
                 e.add_field(name='Players: 1', value=member.name, inline=False)
-                e.set_footer(text='Click 👍 to join/leave siege, ❌ to close siege.'.format)
+                e.set_footer(text='Click 👍 to join/leave siege, ❌ to close siege.')
                 if siege_monster == "Safi'jiiva":
                     e.set_thumbnail(url='https://vignette.wikia.nocookie.net/monsterhunter/images/f/fa/MHWI-Safi%27jiiva_Icon.png/revision/latest/scale-to-width-down/340?cb=20191207161325')
                 else:
