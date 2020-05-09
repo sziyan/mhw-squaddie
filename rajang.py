@@ -235,30 +235,31 @@ async def on_raw_reaction_add(payload):
             await rules_message.remove_reaction('✅', member)
 
         elif emoji_add == 707790768324083732:   #create event :zinsigh:
-            now = datetime.datetime.now().strftime('%d %b %I:%M %p')
             member = payload.member
             cemoji = await message.guild.fetch_emoji(707790768324083732)
             quest_board_channel = message.guild.get_channel(708369949831200841)
             await message.remove_reaction(cemoji, member)
             try:
-                prompt_event_title = await message.channel.send('{} Name of monster to hunt?(Type `cancel` to stop)'.format(member.mention), delete_after=60.0)
+                prompt_event_title = await message.channel.send('{} Whats the objective?(Type `cancel` to stop)'.format(member.mention), delete_after=60.0)
                 def check_event(m):
                     return m.author == member and m.channel == channel
                 event_title = await client.wait_for('message', check=check_event, timeout=60.0)
                 if event_title.content.lower() == 'cancel':
                     return
-                prompt_time = await message.channel.send('{} What time is the event?(Type `cancel` to stop)'.format(member.mention), delete_after=60.0)
+                prompt_time = await message.channel.send('{} What time is preferred?(Type `NA` if no preference, `cancel` to stop.)'.format(member.mention), delete_after=60.0)
                 def check_time(m):
                     return m.author == member and m.channel == message.channel
                 event_time = await client.wait_for('message', check=check_time, timeout=60.0)
                 if event_time.content.lower() == 'cancel':
                     await event_time.delete()
                     return
+                elif event_time.content.lower() == 'na':
+                    event_time.content = '--'
                 event_title_description = '```fix\n{}\n```'.format(event_title.content)
                 e = discord.Embed(description=event_title_description)
                 e.add_field(name='Time (GMT+8)', value=event_time.content, inline=False)
-                e.add_field(name='Players: 1', value=member.mention, inline=False)
-                e.set_footer(text='Added on {}. Click 👍 to join/unjoin event, ❌ to close event.'.format(now))
+                e.add_field(name='Players: 1', value=member.name, inline=False)
+                e.set_footer(text='Click 👍 to join/unjoin event, ❌ to close event.')
                 e.set_author(name=member.display_name, icon_url=member.avatar_url)
                 msg = await quest_board_channel.send(embed=e)
                 await msg.add_reaction('👍')
@@ -266,7 +267,7 @@ async def on_raw_reaction_add(payload):
                 await message.channel.send('LFG has been posted at {}.'.format(quest_board_channel.mention),delete_after=5.0)
             except asyncio.exceptions.TimeoutError:
                 await message.channel.send('Creating of post timed out. Please try again.', delete_after=5.0)
-                logging.info('{} timed out when creating new event.'.format(member.display_name))
+                logging.info('{} timed out when creating new event.'.format(member.mention))
                 pass
             finally:
                 try:
@@ -315,8 +316,8 @@ async def on_raw_reaction_add(payload):
                 siege_monster_desc = '```fix\n{}\n```'.format(siege_monster)
                 e = discord.Embed(description=siege_monster_desc)
                 e.add_field(name='Time (GMT+8)', value=siege_time.content, inline=False)
-                e.add_field(name='Players: 1', value=member.mention, inline=False)
-                e.set_footer(text='Added on {}. Click 👍 to join/leave siege, ❌ to close siege.'.format(now))
+                e.add_field(name='Players: 1', value=member.name, inline=False)
+                e.set_footer(text='Click 👍 to join/leave siege, ❌ to close siege.'.format)
                 if siege_monster == "Safi'jiiva":
                     e.set_thumbnail(url='https://vignette.wikia.nocookie.net/monsterhunter/images/f/fa/MHWI-Safi%27jiiva_Icon.png/revision/latest/scale-to-width-down/340?cb=20191207161325')
                 else:
@@ -329,7 +330,7 @@ async def on_raw_reaction_add(payload):
                 await channel.send('LFG has been posted at {}.'.format(quest_board_channel.mention), delete_after=5.0)
             except asyncio.exceptions.TimeoutError:
                 await message.channel.send('Creating of post timed out. Please try again.', delete_after=5.0)
-                logging.info('{} timed out when creating new siege.'.format(member.display_name))
+                logging.info('{} timed out when creating new siege.'.format(member.mention))
                 pass
             finally:
                 try:
@@ -340,13 +341,13 @@ async def on_raw_reaction_add(payload):
 
 
         elif emoji_add == '👍':
-            member = payload.member.mention
+            member_name = payload.member.name
             embed = message.embeds[0]
             fields = embed.fields
             players = fields[1].value
             list_of_players = players.split()
-            if member not in list_of_players:
-                list_of_players.append(member)
+            if member_name not in list_of_players:
+                list_of_players.append(member_name)
                 new_players = '\n'.join(list_of_players)
                 no_of_players = len(list_of_players)
                 embed.set_field_at(1, name='Players: {}'.format(no_of_players), value=new_players, inline=False)
@@ -357,16 +358,16 @@ async def on_raw_reaction_add(payload):
             await message.delete()
 
         elif emoji_add == '❌':
-            member = payload.member.mention
+            member = payload.member
             embed = message.embeds[0]
             fields = embed.fields
             players = fields[1].value
             host = players.split()[0]
-            if member == host:
+            if member.name == host:
                 await channel.send('Post deleted..', delete_after=5.0)
                 await message.delete()
             else:
-                await channel.send('{}, Post can only be deleted by the 1st player in the player list.'.format(member), delete_after=5.0)
+                await channel.send('{}, Post can only be deleted by the 1st player in the player list.'.format(member.mention), delete_after=5.0)
                 await message.remove_reaction('❌', payload.member)
 
 
@@ -391,13 +392,13 @@ async def on_raw_reaction_remove(payload):
     if emoji_remove in list_of_reactions:
         if emoji_remove == '👍':
             try:
-                member = user.mention
+                member_name = user.name
                 embed = message.embeds[0]
                 fields = embed.fields
                 players = fields[1].value
                 list_of_players = players.split()
-                if member in list_of_players:
-                    list_of_players.remove(member)
+                if member_name in list_of_players:
+                    list_of_players.remove(member_name)
                     new_players = ('\n').join(list_of_players)
                     no_of_players = len(list_of_players)
                     embed.set_field_at(1, name='Players: {}'.format(no_of_players), value=new_players, inline=False)
@@ -405,25 +406,25 @@ async def on_raw_reaction_remove(payload):
             except discord.errors.HTTPException:
                 pass
 
-@client.event
-async def on_member_join(member):
-    guild = client.get_guild(706463594719608883)
-    new_fiver = guild.get_role(706870296334041088)
-    newcomer = member.mention
-    channel = client.get_channel(706463594719608886)
-    general_channel = client.get_channel(706466658373599253)
-    session_id_channel = client.get_channel(706521000640249927)
-    read_first_channel = client.get_channel(706477462183346277)
-    welcome_list = ["Keep your palicoes! {} is here to hunt!!".format(newcomer),
-                    "{} is here to slay some Great Jagras!".format(newcomer),
-                    "Here comes {}, the Rajang(ahem Rajunk) slayer!".format(newcomer),
-                    "Welcome {} to the Gathering Hall.".format(newcomer),
-                    "Thank the Elder dragons. {} is here to save us from Safi'jiiva!".format(newcomer),
-                    "🐋 cum {} to the hunting hall.".format(newcomer),
-                    "{} is here to cook us some raw meat.".format(newcomer)]
-    index = random.randrange(0, len(welcome_list), 1)
-    await channel.send('{}\nMake sure to read {}, drop by {} to say hi, and join our squad sessions at {}'.format(welcome_list[index],read_first_channel.mention, general_channel.mention, session_id_channel.mention))
-    await member.add_roles(new_fiver)
+# @client.event
+# async def on_member_join(member):
+#     guild = client.get_guild(706463594719608883)
+#     new_fiver = guild.get_role(706870296334041088)
+#     newcomer = member.mention
+#     channel = client.get_channel(706463594719608886)
+#     general_channel = client.get_channel(706466658373599253)
+#     session_id_channel = client.get_channel(706521000640249927)
+#     read_first_channel = client.get_channel(706477462183346277)
+#     welcome_list = ["Keep your palicoes! {} is here to hunt!!".format(newcomer),
+#                     "{} is here to slay some Great Jagras!".format(newcomer),
+#                     "Here comes {}, the Rajang(ahem Rajunk) slayer!".format(newcomer),
+#                     "Welcome {} to the Gathering Hall.".format(newcomer),
+#                     "Thank the Elder dragons. {} is here to save us from Safi'jiiva!".format(newcomer),
+#                     "🐋 cum {} to the hunting hall.".format(newcomer),
+#                     "{} is here to cook us some raw meat.".format(newcomer)]
+#     index = random.randrange(0, len(welcome_list), 1)
+#     await channel.send('{}\nMake sure to read {}, drop by {} to say hi, and join our squad sessions at {}'.format(welcome_list[index],read_first_channel.mention, general_channel.mention, session_id_channel.mention))
+#     await member.add_roles(new_fiver)
 
 # run discord bot
 client.run(Config.discord_token)
