@@ -1,8 +1,6 @@
 import discord
 from config import Config
 import logging
-from mongoengine import *
-from mongoengine import connect
 import random
 import datetime
 import asyncio.exceptions
@@ -12,23 +10,9 @@ client = discord.Client()
 logging.basicConfig(level=logging.INFO, filename='discord_output.log', filemode='a', format='%(asctime)s %(levelname)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 logging.info("Bot started succesfully.")
 
-db = connect('sg', host=Config.host)
 #mod_role_name = [The Asian Squad - GrandBotMaster, Ascenion - Admin]
 MOD_ROLE_ID = [706468834235645954, 100920245190946816]
 
-class Siege(Document):
-    siege_id = IntField(min_value=1, required=True)
-    time = StringField(max_length=200, required=True)
-    rounds = IntField(required=False)
-    players = ListField()
-    host = StringField(max_length=200, required=True)
-
-class Event(Document):
-    event_id = IntField(min_value=1, required=True)
-    time = StringField(max_length=200, required=True)
-    description = StringField(required=False)
-    players = ListField(IntField())
-    host = StringField(max_length=200, required=True)
 
 @client.event
 async def on_ready():
@@ -46,46 +30,51 @@ async def on_message(message):
         #channel = client.get_channel(619171183006580767) #ascension testing
         now = datetime.datetime.now().strftime('%d %b %I:%M %p')
         prompt_session_id, prompt_session_title, session_id_reply, session_title_reply = None,None,None,None
+        try:
+            content = message.content[12:]
+            if content == "":
+                prompt_session_id = await message.channel.send('Creating session.. Whats the session ID?', delete_after=90.0)
+                def check_session_id(m):
+                    return m.channel == message.channel and m.author == message.author
+                session_id_reply = await client.wait_for('message', check=check_session_id, timeout=90.0)
+                session = session_id_reply.content
 
-        content = message.content[12:]
-        if content == "":
-            prompt_session_id = await message.channel.send('Setting new session.. Whats the session ID?')
-            def check_session_id(m):
-                return m.channel == message.channel and m.author == message.author
-            session_id_reply = await client.wait_for('message', check=check_session_id, timeout=30.0)
-            session = session_id_reply.content
+                prompt_session_title = await message.channel.send('Enter session description? (Type `cancel` if no description)', delete_after=90.0)
+                def check_session_title(m):
+                    return m.channel == message.channel and m.author == message.author
+                session_title_reply = await client.wait_for('message', check=check_session_title, timeout=90.0)
 
-            prompt_session_title = await message.channel.send('Any specific goals for the session? (Type `cancel` for general hunting)')
-            def check_session_title(m):
-                return m.channel == message.channel and m.author == message.author
-            session_title_reply = await client.wait_for('message', check=check_session_title, timeout=30.0)
+                if session_title_reply.content.lower() == 'cancel':
+                    session_title = 'Monster Hunting'
+                else:
+                    session_title = session_title_reply.content
 
-            if session_title_reply.content.lower() == 'cancel':
-                session_title = 'Monster Hunting'
+                await message.channel.send('Session created in {}'.format(channel.mention), delete_after=5.0)
             else:
-                session_title = session_title_reply.content
-
-            await message.channel.send('Session created in {}'.format(channel.mention), delete_after=5.0)
-        else:
-            session = "".join(content.split())
-            session = session[:4] + ' ' + session[4:8] + ' ' + session[8:12]
-            session_title = 'Monster Hunting'
-        title = '{}'.format(session_title)
-        session_id = '```fix\n{}```'.format(session)
-        embed = discord.Embed(description='```yaml\n{}```'.format(title), color=0xf1c40f)
-        embed.add_field(name='Session ID', value=session_id)
-        embed.set_footer(text='Added on {}'.format(now))
-        embed.set_author(name=message.author.display_name,icon_url=message.author.avatar_url)
-        msg = await channel.send(embed=embed)
-        cemoji = await message.guild.fetch_emoji(707541604508106818)  #custom emoji to mark session close
-        await msg.add_reaction(cemoji)
-        await message.delete()
-        if prompt_session_id is not None:
-            await prompt_session_id.delete()
-            await session_id_reply.delete()
-        if prompt_session_title is not None:
-            await prompt_session_title.delete()
-            await session_title_reply.delete()
+                session = "".join(content.split())
+                session = session[:4] + ' ' + session[4:8] + ' ' + session[8:12]
+                session_title = 'Monster Hunting'
+            title = '{}'.format(session_title)
+            session_id = '```fix\n{}```'.format(session)
+            embed = discord.Embed(description='```yaml\n{}```'.format(title), color=0xf1c40f)
+            embed.add_field(name='Session ID', value=session_id)
+            embed.set_footer(text='Added on {}'.format(now))
+            embed.set_author(name=message.author.display_name,icon_url=message.author.avatar_url)
+            msg = await channel.send(embed=embed)
+            cemoji = await message.guild.fetch_emoji(707541604508106818)  #custom emoji to mark session close
+            await msg.add_reaction(cemoji)
+            await message.delete()
+        except asyncio.exceptions.TimeoutError:
+            logging.info('{} timed out when creating new session.'.format(message.author.display_name))
+            await message.channel.send('{} timed out when creating new session.'.format(message.author.display_name), delete_after=5.0)
+            pass
+        finally:
+            if prompt_session_id is not None:
+                await prompt_session_id.delete()
+                await session_id_reply.delete()
+            if prompt_session_title is not None:
+                await prompt_session_title.delete()
+                await session_title_reply.delete()
 
     elif message.content.startswith('/help'):
         content = 'Available commands are: \n' \
@@ -95,7 +84,13 @@ async def on_message(message):
         await message.channel.send(content)
 
     # elif message.content.startswith('!test'):
-    #     await message.channel.send(message.author.top_role.id)
+    #     msg_id = int(message.content[6:])
+    #     chnl = await client.fetch_channel(706466658373599253)
+    #     msg = await chnl.fetch_message(msg_id)
+    #     time_edited = msg.created_at
+    #     print(time_edited.strftime('%I:%M:%S %p'))
+
+
 
 ############## ADMIN COMMANDS ###################
 
@@ -148,15 +143,15 @@ async def on_message(message):
             await message.delete()
 
 
-    elif message.content.startswith('&getserverid') and message.author.id == 100118233276764160:
-        member = message.author
-        top_role = member.top_role
-        if top_role.id not in MOD_ROLE_ID:
-            return
-        else:
-            for guild in client.guilds:
-                print('{} - {}'.format(guild.name, guild.id))
-        await message.delete()
+    # elif message.content.startswith('&getserverid') and message.author.id == 100118233276764160:
+    #     member = message.author
+    #     top_role = member.top_role
+    #     if top_role.id not in MOD_ROLE_ID:
+    #         return
+    #     else:
+    #         for guild in client.guilds:
+    #             print('{} - {}'.format(guild.name, guild.id))
+    #     await message.delete()
 
     elif message.content.startswith('&getroles'):
         member = message.author
@@ -168,11 +163,11 @@ async def on_message(message):
             print(guild.roles)
         await message.delete()
 
-    elif message.content.startswith('&setrules') and message.author.id == 100118233276764160:
-        channel = message.channel
-        msg = await channel.fetch_message(706491925649424434)
-        await msg.add_reaction('✅')
-        await message.delete()
+    # elif message.content.startswith('&setrules') and message.author.id == 100118233276764160:
+    #     channel = message.channel
+    #     msg = await channel.fetch_message(706491925649424434)
+    #     await msg.add_reaction('✅')
+    #     await message.delete()
 
     # elif message.content.startswith('&removerules'):
     #     channel = message.channel
@@ -180,31 +175,31 @@ async def on_message(message):
     #     await msg.remove_reaction('✅', message.author)
     #     await message.delete()
 
-    elif message.content.startswith('&setsosmessage'):
-        member = message.author
-        top_role = member.top_role
-        if top_role.id not in MOD_ROLE_ID:
-            return
-        else:
-            prompt_sos_msg = await message.channel.send('What is the new sos message?')
-            def check_sos_msg(m):
-                return m.channel == message.channel and m.author == message.author
-
-            new_sos_msg = await client.wait_for('message', check=check_sos_msg, timeout=30.0)
-
-            prompt_msg_id = await message.channel.send('What is the message id of the pinned sos message?')
-
-            def check_msg_id(m):
-                return m.channel == message.channel and m.author == message.author
-            msg_id_content = await client.wait_for('message', check=check_msg_id, timeout=30.0)
-            msg_id = int(msg_id_content.content)
-
-            msg = await message.channel.fetch_message(msg_id)
-            await msg.edit(content=new_sos_msg.content)
-            await prompt_sos_msg.delete()
-            await prompt_msg_id.delete()
-            await new_sos_msg.delete()
-            await msg_id_content.delete()
+    # elif message.content.startswith('&setsosmessage'):
+    #     member = message.author
+    #     top_role = member.top_role
+    #     if top_role.id not in MOD_ROLE_ID:
+    #         return
+    #     else:
+    #         prompt_sos_msg = await message.channel.send('What is the new sos message?')
+    #         def check_sos_msg(m):
+    #             return m.channel == message.channel and m.author == message.author
+    #
+    #         new_sos_msg = await client.wait_for('message', check=check_sos_msg, timeout=30.0)
+    #
+    #         prompt_msg_id = await message.channel.send('What is the message id of the pinned sos message?')
+    #
+    #         def check_msg_id(m):
+    #             return m.channel == message.channel and m.author == message.author
+    #         msg_id_content = await client.wait_for('message', check=check_msg_id, timeout=30.0)
+    #         msg_id = int(msg_id_content.content)
+    #
+    #         msg = await message.channel.fetch_message(msg_id)
+    #         await msg.edit(content=new_sos_msg.content)
+    #         await prompt_sos_msg.delete()
+    #         await prompt_msg_id.delete()
+    #         await new_sos_msg.delete()
+    #         await msg_id_content.delete()
 
 @client.event
 async def on_raw_reaction_add(payload):
@@ -246,16 +241,16 @@ async def on_raw_reaction_add(payload):
             quest_board_channel = message.guild.get_channel(708369949831200841)
             await message.remove_reaction(cemoji, member)
             try:
-                prompt_event_title = await message.channel.send('{} Name of monster to hunt?(Type `cancel` to stop)'.format(member.mention), delete_after=30.0)
+                prompt_event_title = await message.channel.send('{} Name of monster to hunt?(Type `cancel` to stop)'.format(member.mention), delete_after=60.0)
                 def check_event(m):
                     return m.author == member and m.channel == channel
-                event_title = await client.wait_for('message', check=check_event, timeout=30.0)
+                event_title = await client.wait_for('message', check=check_event, timeout=60.0)
                 if event_title.content.lower() == 'cancel':
                     return
-                prompt_time = await message.channel.send('{} What time is the event?(Type `cancel` to stop)'.format(member.mention), delete_after=30.0)
+                prompt_time = await message.channel.send('{} What time is the event?(Type `cancel` to stop)'.format(member.mention), delete_after=60.0)
                 def check_time(m):
                     return m.author == member and m.channel == message.channel
-                event_time = await client.wait_for('message', check=check_time, timeout=30.0)
+                event_time = await client.wait_for('message', check=check_time, timeout=60.0)
                 if event_time.content.lower() == 'cancel':
                     await event_time.delete()
                     return
@@ -270,6 +265,8 @@ async def on_raw_reaction_add(payload):
                 await msg.add_reaction('❌')
                 await message.channel.send('LFG has been posted at {}.'.format(quest_board_channel.mention),delete_after=5.0)
             except asyncio.exceptions.TimeoutError:
+                await message.channel.send('Creating of post timed out. Please try again.', delete_after=5.0)
+                logging.info('{} timed out when creating new event.'.format(member.display_name))
                 pass
             finally:
                 try:
@@ -331,6 +328,8 @@ async def on_raw_reaction_add(payload):
 
                 await channel.send('LFG has been posted at {}.'.format(quest_board_channel.mention), delete_after=5.0)
             except asyncio.exceptions.TimeoutError:
+                await message.channel.send('Creating of post timed out. Please try again.', delete_after=5.0)
+                logging.info('{} timed out when creating new siege.'.format(member.display_name))
                 pass
             finally:
                 try:
@@ -350,7 +349,7 @@ async def on_raw_reaction_add(payload):
                 list_of_players.append(member)
                 new_players = '\n'.join(list_of_players)
                 no_of_players = len(list_of_players)
-                embed.set_field_at(1, name='Players: ({})'.format(no_of_players), value=new_players, inline=False)
+                embed.set_field_at(1, name='Players: {}'.format(no_of_players), value=new_players, inline=False)
                 await message.edit(embed=embed)
 
         elif emoji_add == 707541604508106818:   #mark session closed :fail:
