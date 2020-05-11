@@ -76,6 +76,17 @@ async def on_message(message):
                 await prompt_session_title.delete()
                 await session_title_reply.delete()
 
+    elif message.content.startswith('/addlfg'):
+        channel = message.channel
+        await message.delete()
+        event_button = await message.guild.fetch_emoji(707790768324083732)
+        siege_button = await message.guild.fetch_emoji(707790900927135765)
+        msg = await channel.send('Click the following reactions to post a LFG/schedule a siege.'
+                                 '{} for event, {} for siege.'.format(event_button, siege_button))
+        await msg.add_reaction(event_button)
+        await msg.add_reaction(siege_button)
+
+
     elif message.content.startswith('/help'):
         content = 'Available commands are: \n' \
                   '`/addsession <session_id>` - Adds a session with the given session ID \n' \
@@ -238,7 +249,7 @@ async def on_raw_reaction_add(payload):
             member = payload.member
             cemoji = await message.guild.fetch_emoji(707790768324083732)
             quest_board_channel = message.guild.get_channel(708369949831200841)
-            await message.remove_reaction(cemoji, member)
+
             try:
                 prompt_event_title = await message.channel.send('{} Whats the objective?(Type `cancel` to stop)'.format(member.mention), delete_after=60.0)
                 def check_event(m):
@@ -271,6 +282,7 @@ async def on_raw_reaction_add(payload):
                 pass
             finally:
                 try:
+                    await message.remove_reaction(cemoji, member)
                     await prompt_event_title.delete()
                     await event_title.delete()
                     await prompt_time.delete()
@@ -286,7 +298,7 @@ async def on_raw_reaction_add(payload):
             now = datetime.datetime.now().strftime('%d %b %I:%M %p')
             member = payload.member
             quest_board_channel = message.guild.get_channel(708369949831200841)
-            await message.remove_reaction(cemoji, member)
+
             prompt_siege = await message.channel.send('❗ for Safi jiiva siege, ‼️ for Kulve Taroth siege.', delete_after=30.0)
             await prompt_siege.add_reaction('❗')
             await prompt_siege.add_reaction('‼️')
@@ -334,6 +346,7 @@ async def on_raw_reaction_add(payload):
                 pass
             finally:
                 try:
+                    await message.remove_reaction(cemoji, member)
                     await prompt_time.delete()
                     await siege_time.delete()
                 except discord.errors.NotFound:
