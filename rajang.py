@@ -81,7 +81,7 @@ async def on_message(message):
         await message.delete()
         event_button = await message.guild.fetch_emoji(707790768324083732)
         siege_button = await message.guild.fetch_emoji(707790900927135765)
-        msg = await channel.send('Click the following reactions to post a LFG/schedule a siege.'
+        msg = await channel.send('Click the following buttons to post a LFG/schedule a siege.\n'
                                  '{} for event, {} for siege.'.format(event_button, siege_button))
         await msg.add_reaction(event_button)
         await msg.add_reaction(siege_button)
