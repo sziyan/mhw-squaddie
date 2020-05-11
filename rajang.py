@@ -153,64 +153,81 @@ async def on_message(message):
             await pinned_message.delete()
             await message.delete()
 
+    elif message.content.startswith('&addreact'):
+        member = message.author
+        top_role = member.top_role
+        ask_reaction = True
+        reaction_list = []
+        if top_role.id not in MOD_ROLE_ID:
+            return
+        else:
+            try:
+                prompt_msg_id = await message.channel.send('What is the message ID?')
 
-    # elif message.content.startswith('&getserverid') and message.author.id == 100118233276764160:
-    #     member = message.author
-    #     top_role = member.top_role
-    #     if top_role.id not in MOD_ROLE_ID:
-    #         return
-    #     else:
-    #         for guild in client.guilds:
-    #             print('{} - {}'.format(guild.name, guild.id))
-    #     await message.delete()
+                def check_id(m):
+                    return m.author == message.author and m.channel == message.channel
 
-    elif message.content.startswith('&getroles'):
+                msg_id = await client.wait_for('message', check=check_id, timeout=60.0)
+
+                while ask_reaction is True:
+                    prompt_reaction = await message.channel.send('Send me a emoji for the reaction(type `cancel` to cancel reaction adding.)', delete_after=60.0)
+
+                    def check_emoji(m):
+                        return m.channel == message.channel and m.author == message.author
+                    reaction_check = await client.wait_for('message', check=check_emoji, timeout=60.0)
+
+                    if reaction_check.content != 'cancel':
+                        reaction = reaction_check
+                        await reaction_check.delete()
+                        await prompt_reaction.delete()
+                        reaction_list.append(reaction.content)
+                    else:
+                        msg = await message.channel.fetch_message(int(msg_id.content))
+                        await reaction_check.delete()
+                        await prompt_reaction.delete()
+                        for r in reaction_list:
+                            try:
+                                await msg.add_reaction(r)
+                            except:
+                                pass
+                        ask_reaction = False
+            except TimeoutError:
+                logging.info('{} timeout when using &addreact'.format(member.name))
+            finally:
+                try:
+                    await prompt_msg_id.delete()
+                    await msg_id.delete()
+                except discord.errors.NotFound:
+                    pass
+                except UnboundLocalError:
+                    pass
+        await message.delete()
+
+    elif message.content.startswith('&setsosmessage'):
         member = message.author
         top_role = member.top_role
         if top_role.id not in MOD_ROLE_ID:
             return
         else:
-            guild = message.guild
-            print(guild.roles)
-        await message.delete()
+            prompt_sos_msg = await message.channel.send('What is the new sos message?')
+            def check_sos_msg(m):
+                return m.channel == message.channel and m.author == message.author
 
-    # elif message.content.startswith('&setrules') and message.author.id == 100118233276764160:
-    #     channel = message.channel
-    #     msg = await channel.fetch_message(706491925649424434)
-    #     await msg.add_reaction('✅')
-    #     await message.delete()
+            new_sos_msg = await client.wait_for('message', check=check_sos_msg, timeout=30.0)
 
-    # elif message.content.startswith('&removerules'):
-    #     channel = message.channel
-    #     msg = await channel.fetch_message(706491925649424434)
-    #     await msg.remove_reaction('✅', message.author)
-    #     await message.delete()
+            prompt_msg_id = await message.channel.send('What is the message id of the pinned sos message?')
 
-    # elif message.content.startswith('&setsosmessage'):
-    #     member = message.author
-    #     top_role = member.top_role
-    #     if top_role.id not in MOD_ROLE_ID:
-    #         return
-    #     else:
-    #         prompt_sos_msg = await message.channel.send('What is the new sos message?')
-    #         def check_sos_msg(m):
-    #             return m.channel == message.channel and m.author == message.author
-    #
-    #         new_sos_msg = await client.wait_for('message', check=check_sos_msg, timeout=30.0)
-    #
-    #         prompt_msg_id = await message.channel.send('What is the message id of the pinned sos message?')
-    #
-    #         def check_msg_id(m):
-    #             return m.channel == message.channel and m.author == message.author
-    #         msg_id_content = await client.wait_for('message', check=check_msg_id, timeout=30.0)
-    #         msg_id = int(msg_id_content.content)
-    #
-    #         msg = await message.channel.fetch_message(msg_id)
-    #         await msg.edit(content=new_sos_msg.content)
-    #         await prompt_sos_msg.delete()
-    #         await prompt_msg_id.delete()
-    #         await new_sos_msg.delete()
-    #         await msg_id_content.delete()
+            def check_msg_id(m):
+                return m.channel == message.channel and m.author == message.author
+            msg_id_content = await client.wait_for('message', check=check_msg_id, timeout=30.0)
+            msg_id = int(msg_id_content.content)
+
+            msg = await message.channel.fetch_message(msg_id)
+            await msg.edit(content=new_sos_msg.content)
+            await prompt_sos_msg.delete()
+            await prompt_msg_id.delete()
+            await new_sos_msg.delete()
+            await msg_id_content.delete()
 
 @client.event
 async def on_raw_reaction_add(payload):
@@ -228,10 +245,11 @@ async def on_raw_reaction_add(payload):
     list_of_reactions = []
 
     for reaction in bot_added_reactions:
-        try:
-            list_of_reactions.append(reaction.emoji.id) #if can get emoji id means custom emoji
-        except AttributeError:
-            list_of_reactions.append(reaction.emoji) #if not is unicode emoji
+        if reaction.me:
+            try:
+                list_of_reactions.append(reaction.emoji.id) #if can get emoji id means custom emoji
+            except AttributeError:
+                list_of_reactions.append(reaction.emoji) #if not is unicode emoji
 
     if message.author.id == user.id:
         return
@@ -269,7 +287,7 @@ async def on_raw_reaction_add(payload):
                 event_title_description = '```fix\n{}\n```'.format(event_title.content)
                 e = discord.Embed(description=event_title_description)
                 e.add_field(name='Time (GMT+8)', value=event_time.content, inline=False)
-                e.add_field(name='Players: 1', value=member.name, inline=False)
+                e.add_field(name='Hunters: 1', value=member.name, inline=False)
                 e.set_footer(text='Click 👍 to join/unjoin event, ❌ to close event.')
                 e.set_author(name=member.display_name, icon_url=member.avatar_url)
                 msg = await quest_board_channel.send(embed=e)
@@ -314,21 +332,22 @@ async def on_raw_reaction_add(payload):
                 else:
                     siege_monster = 'Kulve Taroth'
 
-                prompt_time = await message.channel.send('{}, What is the time for siege? (Type `cancel` to stop)'.format(member.mention))
-                if prompt_time.content.lower() == 'cancel':
-                    return
+                prompt_time = await message.channel.send('{}, What is the time for siege? (Type `NA` if no time preference, `cancel` to stop)'.format(member.mention))
 
                 def check_time(m):
                     return m.author == member and m.channel == channel
 
                 siege_time = await client.wait_for('message', check=check_time, timeout=30.0)
+
                 if siege_time.content.lower() == 'cancel':
                     return
+                elif siege_time.content.lower() == 'na':
+                    siege_time.content = '--'
 
                 siege_monster_desc = '```fix\n{}\n```'.format(siege_monster)
                 e = discord.Embed(description=siege_monster_desc)
                 e.add_field(name='Time (GMT+8)', value=siege_time.content, inline=False)
-                e.add_field(name='Players: 1', value=member.name, inline=False)
+                e.add_field(name='Hunters: 1', value=member.name, inline=False)
                 e.set_footer(text='Click 👍 to join/leave siege, ❌ to close siege.')
                 if siege_monster == "Safi'jiiva":
                     e.set_thumbnail(url='https://vignette.wikia.nocookie.net/monsterhunter/images/f/fa/MHWI-Safi%27jiiva_Icon.png/revision/latest/scale-to-width-down/340?cb=20191207161325')
@@ -363,7 +382,7 @@ async def on_raw_reaction_add(payload):
                 list_of_players.append(member_name)
                 new_players = '\n'.join(list_of_players)
                 no_of_players = len(list_of_players)
-                embed.set_field_at(1, name='Players: {}'.format(no_of_players), value=new_players, inline=False)
+                embed.set_field_at(1, name='Hunters: {}'.format(no_of_players), value=new_players, inline=False)
                 await message.edit(embed=embed)
 
         elif emoji_add == 707541604508106818:   #mark session closed :fail:
@@ -380,7 +399,7 @@ async def on_raw_reaction_add(payload):
                 await channel.send('Post deleted..', delete_after=5.0)
                 await message.delete()
             else:
-                await channel.send('{}, Post can only be deleted by the 1st player in the player list.'.format(member.mention), delete_after=5.0)
+                await channel.send('{}, Post can only be deleted by the 1st hunter in the list.'.format(member.mention), delete_after=5.0)
                 await message.remove_reaction('❌', payload.member)
 
 
@@ -414,7 +433,7 @@ async def on_raw_reaction_remove(payload):
                     list_of_players.remove(member_name)
                     new_players = ('\n').join(list_of_players)
                     no_of_players = len(list_of_players)
-                    embed.set_field_at(1, name='Players: {}'.format(no_of_players), value=new_players, inline=False)
+                    embed.set_field_at(1, name='Hunters: {}'.format(no_of_players), value=new_players, inline=False)
                     await message.edit(embed=embed)
             except discord.errors.HTTPException:
                 pass
