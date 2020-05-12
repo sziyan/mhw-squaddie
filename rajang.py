@@ -13,6 +13,9 @@ logging.info("Bot started succesfully.")
 #mod_role_name = [The Asian Squad - GrandBotMaster, Ascenion - Admin]
 MOD_ROLE_ID = [706468834235645954, 100920245190946816]
 
+def test(msg):
+    print(msg)
+
 
 @client.event
 async def on_ready():
@@ -241,8 +244,10 @@ async def on_raw_reaction_add(payload):
         emoji_add = payload.emoji.id  #set emoji_add to emoji id
     else:
         emoji_add = payload.emoji.name #else set to emoji name
-
     list_of_reactions = []
+
+    if client.user.id == payload.user_id:   #
+        return
 
     for reaction in bot_added_reactions:
         if reaction.me:
@@ -250,9 +255,6 @@ async def on_raw_reaction_add(payload):
                 list_of_reactions.append(reaction.emoji.id) #if can get emoji id means custom emoji
             except AttributeError:
                 list_of_reactions.append(reaction.emoji) #if not is unicode emoji
-
-    if message.author.id == user.id:
-        return
 
     if emoji_add in list_of_reactions:
         if emoji_add == '✅' and message_id == 706491925649424434: #rules messsage id
@@ -267,7 +269,6 @@ async def on_raw_reaction_add(payload):
             member = payload.member
             cemoji = await message.guild.fetch_emoji(707790768324083732)
             quest_board_channel = message.guild.get_channel(708369949831200841)
-
             try:
                 prompt_event_title = await message.channel.send('{} Whats the objective?(Type `cancel` to stop)'.format(member.mention), delete_after=60.0)
                 def check_event(m):
