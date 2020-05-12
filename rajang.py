@@ -13,8 +13,27 @@ logging.info("Bot started succesfully.")
 #mod_role_name = [The Asian Squad - GrandBotMaster, Ascenion - Admin]
 MOD_ROLE_ID = [706468834235645954, 100920245190946816]
 
-def test(msg):
-    print(msg)
+async def addlfg(message, lfg_type, description, member, time):
+    quest_board_channel = message.guild.get_channel(708369949831200841)
+    lfg_description = '```fix\n{}\n```'.format(description)
+    e = discord.Embed(description=lfg_description)
+    e.add_field(name='Time (GMT+8)', value=time, inline=False)
+    e.add_field(name='Hunters: 1', value=member.name, inline=True)
+    if lfg_type == 'siege':
+        if description == "Safi'jiiva":
+            e.set_thumbnail(
+                url='https://vignette.wikia.nocookie.net/monsterhunter/images/f/fa/MHWI-Safi%27jiiva_Icon.png/revision/latest/scale-to-width-down/340?cb=20191207161325')
+        else:
+            e.set_thumbnail(url='https://ih0.redbubble.net/image.551722156.9913/flat,550x550,075,f.u3.jpg')
+    e.set_footer(text='Click 👍 to join/unjoin event, ❌ to close event.')
+    e.set_author(name=member.display_name, icon_url=member.avatar_url)
+    #msg = await quest_board_channel.send(embed=e)
+    msg = await message.channel.send(embed=e)
+    await msg.add_reaction('👍')
+    await msg.add_reaction('❔')
+    await msg.add_reaction('❌')
+    await msg.add_reaction('🚧')
+    await message.channel.send('LFG has been posted at {}.'.format(quest_board_channel.mention), delete_after=5.0)
 
 
 @client.event
@@ -269,7 +288,7 @@ async def on_raw_reaction_add(payload):
         elif emoji_add == 707790768324083732:   #create event :zinsigh:
             member = payload.member
             cemoji = await message.guild.fetch_emoji(707790768324083732)
-            quest_board_channel = message.guild.get_channel(708369949831200841)
+            lfg_type = 'event'
             try:
                 prompt_event_title = await message.channel.send('{} Whats the objective?(Type `cancel` to stop)'.format(member.mention), delete_after=60.0)
                 def check_event(m):
@@ -286,16 +305,17 @@ async def on_raw_reaction_add(payload):
                     return
                 elif event_time.content.lower() == 'na':
                     event_time.content = '--'
-                event_title_description = '```fix\n{}\n```'.format(event_title.content)
-                e = discord.Embed(description=event_title_description)
-                e.add_field(name='Time (GMT+8)', value=event_time.content, inline=False)
-                e.add_field(name='Hunters: 1', value=member.name, inline=False)
-                e.set_footer(text='Click 👍 to join/unjoin event, ❌ to close event.')
-                e.set_author(name=member.display_name, icon_url=member.avatar_url)
-                msg = await quest_board_channel.send(embed=e)
-                await msg.add_reaction('👍')
-                await msg.add_reaction('❌')
-                await message.channel.send('LFG has been posted at {}.'.format(quest_board_channel.mention),delete_after=5.0)
+                await addlfg(message=message, lfg_type=lfg_type,description=event_title.content,member=member, time=event_time.content)
+                # event_title_description = '```fix\n{}\n```'.format(event_title.content)
+                # e = discord.Embed(description=event_title_description)
+                # e.add_field(name='Time (GMT+8)', value=event_time.content, inline=False)
+                # e.add_field(name='Hunters: 1', value=member.name, inline=False)
+                # e.set_footer(text='Click 👍 to join/unjoin event, ❌ to close event.')
+                # e.set_author(name=member.display_name, icon_url=member.avatar_url)
+                # msg = await quest_board_channel.send(embed=e)
+                # await msg.add_reaction('👍')
+                # await msg.add_reaction('❌')
+                #await message.channel.send('LFG has been posted at {}.'.format(quest_board_channel.mention),delete_after=5.0)
             except asyncio.exceptions.TimeoutError:
                 await message.channel.send('Creating of post timed out. Please try again.', delete_after=5.0)
                 logging.info('{} timed out when creating new event.'.format(member.mention))
@@ -312,10 +332,9 @@ async def on_raw_reaction_add(payload):
                 except UnboundLocalError:
                     pass
 
-
         elif emoji_add == 707790900927135765:   #create siege :xenoeyes:
             cemoji = await message.guild.fetch_emoji(707790900927135765)
-            now = datetime.datetime.now().strftime('%d %b %I:%M %p')
+            lfg_type = 'siege'
             member = payload.member
             quest_board_channel = message.guild.get_channel(708369949831200841)
 
@@ -346,21 +365,22 @@ async def on_raw_reaction_add(payload):
                 elif siege_time.content.lower() == 'na':
                     siege_time.content = '--'
 
-                siege_monster_desc = '```fix\n{}\n```'.format(siege_monster)
-                e = discord.Embed(description=siege_monster_desc)
-                e.add_field(name='Time (GMT+8)', value=siege_time.content, inline=False)
-                e.add_field(name='Hunters: 1', value=member.name, inline=False)
-                e.set_footer(text='Click 👍 to join/leave siege, ❌ to close siege.')
-                if siege_monster == "Safi'jiiva":
-                    e.set_thumbnail(url='https://vignette.wikia.nocookie.net/monsterhunter/images/f/fa/MHWI-Safi%27jiiva_Icon.png/revision/latest/scale-to-width-down/340?cb=20191207161325')
-                else:
-                    e.set_thumbnail(url='https://ih0.redbubble.net/image.551722156.9913/flat,550x550,075,f.u3.jpg')
-                e.set_author(name=member.display_name, icon_url=member.avatar_url)
-                msg = await quest_board_channel.send(embed=e)
-                await msg.add_reaction('👍')
-                await msg.add_reaction('❌')
+                await addlfg(message, lfg_type=lfg_type, description=siege_monster,member=member,time=siege_time.content)
+                # siege_monster_desc = '```fix\n{}\n```'.format(siege_monster)
+                # e = discord.Embed(description=siege_monster_desc)
+                # e.add_field(name='Time (GMT+8)', value=siege_time.content, inline=False)
+                # e.add_field(name='Hunters: 1', value=member.name, inline=False)
+                # e.set_footer(text='Click 👍 to join/leave siege, ❌ to close siege.')
+                # if siege_monster == "Safi'jiiva":
+                #     e.set_thumbnail(url='https://vignette.wikia.nocookie.net/monsterhunter/images/f/fa/MHWI-Safi%27jiiva_Icon.png/revision/latest/scale-to-width-down/340?cb=20191207161325')
+                # else:
+                #     e.set_thumbnail(url='https://ih0.redbubble.net/image.551722156.9913/flat,550x550,075,f.u3.jpg')
+                # e.set_author(name=member.display_name, icon_url=member.avatar_url)
+                # msg = await quest_board_channel.send(embed=e)
+                # await msg.add_reaction('👍')
+                # await msg.add_reaction('❌')
 
-                await channel.send('LFG has been posted at {}.'.format(quest_board_channel.mention), delete_after=5.0)
+                #await channel.send('LFG has been posted at {}.'.format(quest_board_channel.mention), delete_after=5.0)
             except asyncio.exceptions.TimeoutError:
                 await message.channel.send('Creating of post timed out. Please try again.', delete_after=5.0)
                 logging.info('{} timed out when creating new siege.'.format(member.mention))
@@ -372,7 +392,6 @@ async def on_raw_reaction_add(payload):
                     await siege_time.delete()
                 except discord.errors.NotFound:
                     pass
-
 
         elif emoji_add == '👍':
             member_name = payload.member.name
@@ -403,6 +422,94 @@ async def on_raw_reaction_add(payload):
             else:
                 await channel.send('{}, Post can only be deleted by the 1st hunter in the list.'.format(member.mention), delete_after=5.0)
                 await message.remove_reaction('❌', payload.member)
+
+        elif emoji_add == '🚧':
+            member = payload.member
+            embed = message.embeds[0]
+            fields = embed.fields
+            players = fields[1].value
+            host = players.split()[0]
+            if member.name == host:
+                try:
+                    prompt_description = await message.channel.send('What is the updated message? (Type `NA` to skip, `cancel` to quit)')
+                    def check_desc(m):
+                        return m.author == member and m.channel == channel
+
+                    new_description = await client.wait_for('message', check=check_desc, timeout=120.0)
+                    if new_description.content.lower() == 'na':
+                        description = None
+                    elif new_description.content == 'cancel':
+                        return
+                    else:
+                        description = new_description.content
+
+                    prompt_time = await message.channel.send('What is the new time? (Type `NA` to skip, `cancel` to quit)')
+                    def check_time(m):
+                        return m.author == member and m.channel == channel
+                    new_time = await client.wait_for('message', check=check_time, timeout=120.0)
+
+                    if new_time.content.lower() == 'na':
+                        time = None
+                    elif new_time.content.lower() == 'cancel':
+                        return
+                    else:
+                        time = new_time.content
+
+                    if description is not None:
+                        embed.description = '```fix\n{}\n```'.format(description)
+                    if time is not None:
+                        embed.set_field_at(0, name='Time:', value=time, inline=False)
+                    if description is not None or time is not None:
+                        await message.edit(embed=embed)
+                except asyncio.exceptions.TimeoutError:
+                    await message.channel.send('Updating of post timed out. Please try again.', delete_after=5.0)
+                    logging.info('{} timed out when updating post.'.format(member.name))
+                    pass
+                finally:
+                    try:
+                        await message.remove_reaction('🚧', member)
+                        await prompt_description.delete()
+                        await new_description.delete()
+                        await prompt_time.delete()
+                        await new_time.delete()
+                    except discord.errors.NotFound:
+                        pass
+                    except UnboundLocalError:
+                        pass
+            else:
+                await channel.send('{}, Post can only be edited by the 1st hunter in the list.'.format(member.mention),
+                                   delete_after=5.0)
+                await message.remove_reaction('🚧', member)
+
+        elif emoji_add == '❔':
+            member = payload.member
+            embed = message.embeds[0]
+            players = embed.fields[1].value
+            
+            if len(embed.fields) <3: #no tentative player exist, so by default the 1st tentative player is the user
+                embed.add_field(name='Tentative: 1', value=member.name, inline=True)
+            else:
+                tentative_players = message.embeds[2].value.split()
+                if member.name not in tentative_players:
+                    tentative_players.append(member.name)
+                    no_of_tentative = len(tentative_players)
+                    tentative_players = '\n'.join(tentative_players)
+                    embed.set_field_at(2, name='Tentative: {}'.format(no_of_tentative), value=tentative_players, inline=True)
+            await message.edit(embed=embed)
+
+
+            # member_name = payload.member.name
+            # embed = message.embeds[0]
+            # fields = embed.fields
+            # players = fields[1].value
+            # list_of_players = players.split()
+            # if member_name not in list_of_players:
+            #     list_of_players.append(member_name)
+            #     new_players = '\n'.join(list_of_players)
+            #     no_of_players = len(list_of_players)
+            #     embed.set_field_at(1, name='Hunters: {}'.format(no_of_players), value=new_players, inline=False)
+            #     await message.edit(embed=embed)
+
 
 
 
