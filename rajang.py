@@ -85,7 +85,7 @@ async def on_message(message):
         event_button = await message.guild.fetch_emoji(707790768324083732)
         siege_button = await message.guild.fetch_emoji(707790900927135765)
         msg = await channel.send('Click the following buttons to post a LFG/schedule a siege.\n'
-                                 '{} for event, {} for siege.'.format(event_button, siege_button))
+                                 '{} for event, {} for siege.'.format(event_button, siege_button), delete_after=60.0)
         await msg.add_reaction(event_button)
         await msg.add_reaction(siege_button)
 
@@ -94,6 +94,7 @@ async def on_message(message):
         content = 'Available commands are: \n' \
                   '`/addsession <session_id>` - Adds a session with the given session ID \n' \
                   '`/addsession` - Bot will prompt you on what is the session ID \n' \
+                  '`/addlfg` - Schedule an event or siege \n' \
                   '`/help` - This help message.'
         await message.channel.send(content)
 
@@ -246,7 +247,7 @@ async def on_raw_reaction_add(payload):
         emoji_add = payload.emoji.name #else set to emoji name
     list_of_reactions = []
 
-    if client.user.id == payload.user_id:   #
+    if client.user.id == payload.user_id:
         return
 
     for reaction in bot_added_reactions:
@@ -439,25 +440,25 @@ async def on_raw_reaction_remove(payload):
             except discord.errors.HTTPException:
                 pass
 
-# @client.event
-# async def on_member_join(member):
-#     guild = client.get_guild(706463594719608883)
-#     new_fiver = guild.get_role(706870296334041088)
-#     newcomer = member.mention
-#     channel = client.get_channel(706463594719608886)
-#     general_channel = client.get_channel(706466658373599253)
-#     session_id_channel = client.get_channel(706521000640249927)
-#     read_first_channel = client.get_channel(706477462183346277)
-#     welcome_list = ["Keep your palicoes! {} is here to hunt!!".format(newcomer),
-#                     "{} is here to slay some Great Jagras!".format(newcomer),
-#                     "Here comes {}, the Rajang(ahem Rajunk) slayer!".format(newcomer),
-#                     "Welcome {} to the Gathering Hall.".format(newcomer),
-#                     "Thank the Elder dragons. {} is here to save us from Safi'jiiva!".format(newcomer),
-#                     "🐋 cum {} to the hunting hall.".format(newcomer),
-#                     "{} is here to cook us some raw meat.".format(newcomer)]
-#     index = random.randrange(0, len(welcome_list), 1)
-#     await channel.send('{}\nMake sure to read {}, drop by {} to say hi, and join our squad sessions at {}'.format(welcome_list[index],read_first_channel.mention, general_channel.mention, session_id_channel.mention))
-#     await member.add_roles(new_fiver)
+@client.event
+async def on_member_join(member):
+    guild = client.get_guild(706463594719608883)
+    new_fiver = guild.get_role(706870296334041088)
+    newcomer = member.mention
+    channel = client.get_channel(706463594719608886)
+    general_channel = client.get_channel(706466658373599253)
+    session_id_channel = client.get_channel(706521000640249927)
+    read_first_channel = client.get_channel(706477462183346277)
+    welcome_list = ["Keep your palicoes! {} is here to hunt!!".format(newcomer),
+                    "{} is here to slay some Great Jagras!".format(newcomer),
+                    "Here comes {}, the Rajang(ahem Rajunk) slayer!".format(newcomer),
+                    "Welcome {} to the Gathering Hall.".format(newcomer),
+                    "Thank the Elder dragons. {} is here to save us from Safi'jiiva!".format(newcomer),
+                    "🐋 cum {} to the hunting hall.".format(newcomer),
+                    "{} is here to cook us some raw meat.".format(newcomer)]
+    index = random.randrange(0, len(welcome_list), 1)
+    await channel.send('{}\nMake sure to read {}, drop by {} to say hi, and join our squad sessions at {}'.format(welcome_list[index],read_first_channel.mention, general_channel.mention, session_id_channel.mention))
+    await member.add_roles(new_fiver)
 
 # run discord bot
 client.run(Config.discord_token)
