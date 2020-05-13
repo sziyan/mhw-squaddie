@@ -5,10 +5,20 @@ import random
 import datetime
 import asyncio.exceptions
 import discord.errors
+from mongoengine import *
+from mongoengine import connect
 
 client = discord.Client()
 logging.basicConfig(level=logging.INFO, filename='discord_output.log', filemode='a', format='%(asctime)s %(levelname)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 logging.info("Bot started succesfully.")
+
+db = connect('sg', host=Config.host)
+
+class Lfg(Document):
+    message_id = IntField(required=True)
+    confirmed = ListField(IntField())
+    tentative = ListField(IntField())
+    time = StringField()
 
 #mod_role_name = [The Asian Squad - GrandBotMaster, Ascenion - Admin]
 MOD_ROLE_ID = [706468834235645954, 100920245190946816]
@@ -18,7 +28,8 @@ async def addlfg(message, lfg_type, description, member, time):
     lfg_description = '```fix\n{}\n```'.format(description)
     e = discord.Embed(description=lfg_description)
     e.add_field(name='Time (GMT+8)', value=time, inline=False)
-    e.add_field(name='Hunters: 1', value=member.name, inline=True)
+    e.add_field(name='Confirmed: 1', value=member.mention, inline=True)
+    e.add_field(name='Tentative: 0', value='-', inline=True)
     if lfg_type == 'siege':
         if description == "Safi'jiiva":
             e.set_thumbnail(
@@ -28,11 +39,14 @@ async def addlfg(message, lfg_type, description, member, time):
     e.set_footer(text='Click 👍 to join/unjoin event, ❌ to close event.')
     e.set_author(name=member.display_name, icon_url=member.avatar_url)
     #msg = await quest_board_channel.send(embed=e)
+
     msg = await message.channel.send(embed=e)
+    lfg_session = Lfg(message_id=msg.id, confirmed=[member.id])
     await msg.add_reaction('👍')
     await msg.add_reaction('❔')
     await msg.add_reaction('❌')
     await msg.add_reaction('🚧')
+    lfg_session.save()
     await message.channel.send('LFG has been posted at {}.'.format(quest_board_channel.mention), delete_after=5.0)
 
 
@@ -394,17 +408,32 @@ async def on_raw_reaction_add(payload):
                     pass
 
         elif emoji_add == '👍':
-            member_name = payload.member.name
+            member = payload.member
+            post = Lfg.objects(message_id=payload.message_id).first()
+            list_of_confirm = post.confirmed
+            list_of_tentative = post.tentative
             embed = message.embeds[0]
-            fields = embed.fields
-            players = fields[1].value
-            list_of_players = players.split()
-            if member_name not in list_of_players:
-                list_of_players.append(member_name)
-                new_players = '\n'.join(list_of_players)
-                no_of_players = len(list_of_players)
-                embed.set_field_at(1, name='Hunters: {}'.format(no_of_players), value=new_players, inline=False)
+
+            if post is None:
+                return
+            if member.id not in list_of_confirm:
+                list_of_confirm.append(member.id)   #add player into confirmed list
+                players_name = []
+                for i in list_of_confirm:   #generate players list
+                    user = client.get_user(i)
+                    players_name.append(user.mention)
+                if member.id in list_of_tentative:
+                    list_of_tentative.remove(member.id)
+                    tentative_name = []
+                    for id in list_of_tentative:
+                        user = client.get_user(id)
+                        tentative_name.append(user.mention)
+                new_players = '\n'.join(players_name)
+                no_of_players = len(list_of_confirm)
+                embed.set_field_at(1, name='Confirmed: {}'.format(no_of_players), value=new_players, inline=True)
                 await message.edit(embed=embed)
+                post.confirmed = list_of_confirm
+                post.save()
 
         elif emoji_add == 707541604508106818:   #mark session closed :fail:
             await channel.send('Session ID deleted..', delete_after=5.0)
@@ -412,24 +441,25 @@ async def on_raw_reaction_add(payload):
 
         elif emoji_add == '❌':
             member = payload.member
-            embed = message.embeds[0]
-            fields = embed.fields
-            players = fields[1].value
-            host = players.split()[0]
-            if member.name == host:
+            post = Lfg.objects(message_id = payload.message_id).first()
+            if post is None:
+                return
+            host_id = post.confirmed[0]
+            host = client.get_user(host_id)
+            if member.id == host_id:
                 await channel.send('Post deleted..', delete_after=5.0)
                 await message.delete()
+                post.delete()
             else:
-                await channel.send('{}, Post can only be deleted by the 1st hunter in the list.'.format(member.mention), delete_after=5.0)
+                await channel.send('{}, Post can only be deleted by the {}.'.format(member.mention,host.mention), delete_after=5.0)
                 await message.remove_reaction('❌', payload.member)
 
         elif emoji_add == '🚧':
             member = payload.member
             embed = message.embeds[0]
-            fields = embed.fields
-            players = fields[1].value
-            host = players.split()[0]
-            if member.name == host:
+            post = Lfg.objects(message_id=message_id).first()
+            host = post.confirmed[0]
+            if member.id == host:
                 try:
                     prompt_description = await message.channel.send('What is the updated message? (Type `NA` to skip, `cancel` to quit)')
                     def check_desc(m):
@@ -484,21 +514,44 @@ async def on_raw_reaction_add(payload):
         elif emoji_add == '❔':
             member = payload.member
             embed = message.embeds[0]
-            players = embed.fields[1].value
-            
-            if len(embed.fields) <3: #no tentative player exist, so by default the 1st tentative player is the user
-                embed.add_field(name='Tentative: 1', value=member.name, inline=True)
-            else:
-                tentative_players = message.embeds[2].value.split()
-                if member.name not in tentative_players:
-                    tentative_players.append(member.name)
-                    no_of_tentative = len(tentative_players)
-                    tentative_players = '\n'.join(tentative_players)
-                    embed.set_field_at(2, name='Tentative: {}'.format(no_of_tentative), value=tentative_players, inline=True)
-            await message.edit(embed=embed)
+            post = Lfg.objects(message_id=payload.message_id).first()
+            list_of_tentative = post.tentative
+            if post is None:
+                return
+            if len(post.confirmed) <=1 and member.id == post.confirmed[0]:
+                return
+
+            if member.id not in list_of_tentative:
+                list_of_confirm = post.confirmed
+                if member.id in list_of_confirm:
+                    list_of_confirm.remove(member.id)   #remove player from confirmed list
+                list_of_tentative.append(member.id) #add player to tentative list
+                confirm_list = []
+                tentative_list = []
+                for id in list_of_confirm:  #generate players in confirm list for output
+                    user = client.get_user(id)
+                    confirm_list.append(user.mention)
+                for id in list_of_tentative:  #generate tentative players list for output
+                    user = client.get_user(id)
+                    tentative_list.append(user.mention)
+                no_of_tentative = len(tentative_list)   #get number of tentative
+                no_of_confirm = len(confirm_list)   #get number of confirm
+                tentative_players = '\n'.join(tentative_list)
+                confirm_players = '\n'.join(confirm_list)
+                embed.set_field_at(1,name='Confirm: {}'.format(no_of_confirm), value=confirm_players, inline=True)
+                embed.set_field_at(2, name='Tentative: {}'.format(no_of_tentative), value=tentative_players, inline=True)
+                await message.edit(embed=embed)
+                post.tentative = list_of_tentative
+                post.confirmed = list_of_confirm
+                post.save()
+                try:
+                    await message.remove_reaction('👍', member)
+                except discord.errors.HTTPException:
+                    pass
 
 
-            # member_name = payload.member.name
+
+                    # member_name = payload.member.name
             # embed = message.embeds[0]
             # fields = embed.fields
             # players = fields[1].value
@@ -533,17 +586,23 @@ async def on_raw_reaction_remove(payload):
     if emoji_remove in list_of_reactions:
         if emoji_remove == '👍':
             try:
-                member_name = user.name
                 embed = message.embeds[0]
-                fields = embed.fields
-                players = fields[1].value
-                list_of_players = players.split()
-                if member_name in list_of_players:
-                    list_of_players.remove(member_name)
-                    new_players = ('\n').join(list_of_players)
-                    no_of_players = len(list_of_players)
-                    embed.set_field_at(1, name='Hunters: {}'.format(no_of_players), value=new_players, inline=False)
+                post = Lfg.objects(message_id=message_id).first()
+                if post is None:
+                    return
+                list_of_players = post.confirmed
+                if payload.user_id in list_of_players:
+                    list_of_players.remove(payload.user_id)
+                    player_list = []
+                    for id in list_of_players:
+                        user = client.get_user(id)
+                        player_list.append(user.mention)
+                    new_players = ('\n').join(player_list)
+                    no_of_players = len(player_list)
+                    embed.set_field_at(1, name='Confirmed: {}'.format(no_of_players), value=new_players, inline=True)
                     await message.edit(embed=embed)
+                    post.confirmed = list_of_players
+                    post.save()
             except discord.errors.HTTPException:
                 pass
 
