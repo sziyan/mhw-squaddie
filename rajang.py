@@ -36,11 +36,10 @@ async def addlfg(message, lfg_type, description, member, time):
                 url='https://vignette.wikia.nocookie.net/monsterhunter/images/f/fa/MHWI-Safi%27jiiva_Icon.png/revision/latest/scale-to-width-down/340?cb=20191207161325')
         else:
             e.set_thumbnail(url='https://ih0.redbubble.net/image.551722156.9913/flat,550x550,075,f.u3.jpg')
-    e.set_footer(text='Click 👍 to join/unjoin event, ❌ to close event.')
+    e.set_footer(text='|👍 - Attending |❔ - Tentative | ❌ - Delete | 🚧 - Update |')
     e.set_author(name=member.display_name, icon_url=member.avatar_url)
-    #msg = await quest_board_channel.send(embed=e)
-
-    msg = await message.channel.send(embed=e)
+    msg = await quest_board_channel.send(embed=e)
+    #msg = await message.channel.send(embed=e)
     lfg_session = Lfg(message_id=msg.id, confirmed=[member.id])
     await msg.add_reaction('👍')
     await msg.add_reaction('❔')
@@ -52,7 +51,7 @@ async def addlfg(message, lfg_type, description, member, time):
 
 @client.event
 async def on_ready():
-    await client.change_presence(activity=discord.Game(name="Monster Hunter World"))
+    await client.change_presence(activity=discord.Game(name="/help for info"))
     print('We have logged in as {0.user}'.format(client))
 
 @client.event
@@ -63,7 +62,6 @@ async def on_message(message):
 
     if message.content.startswith('/addsession'):
         channel = client.get_channel(706521000640249927) #asian squad
-        #channel = client.get_channel(619171183006580767) #ascension testing
         now = datetime.datetime.now().strftime('%d %b %I:%M %p')
         prompt_session_id, prompt_session_title, session_id_reply, session_title_reply = None,None,None,None
         try:
@@ -131,12 +129,6 @@ async def on_message(message):
                   '`/help` - This help message.'
         await message.channel.send(content)
 
-    # elif message.content.startswith('!test'):
-    #     msg_id = int(message.content[6:])
-    #     chnl = await client.fetch_channel(706466658373599253)
-    #     msg = await chnl.fetch_message(msg_id)
-    #     time_edited = msg.created_at
-    #     print(time_edited.strftime('%I:%M:%S %p'))
 
 
 
@@ -320,16 +312,6 @@ async def on_raw_reaction_add(payload):
                 elif event_time.content.lower() == 'na':
                     event_time.content = '--'
                 await addlfg(message=message, lfg_type=lfg_type,description=event_title.content,member=member, time=event_time.content)
-                # event_title_description = '```fix\n{}\n```'.format(event_title.content)
-                # e = discord.Embed(description=event_title_description)
-                # e.add_field(name='Time (GMT+8)', value=event_time.content, inline=False)
-                # e.add_field(name='Hunters: 1', value=member.name, inline=False)
-                # e.set_footer(text='Click 👍 to join/unjoin event, ❌ to close event.')
-                # e.set_author(name=member.display_name, icon_url=member.avatar_url)
-                # msg = await quest_board_channel.send(embed=e)
-                # await msg.add_reaction('👍')
-                # await msg.add_reaction('❌')
-                #await message.channel.send('LFG has been posted at {}.'.format(quest_board_channel.mention),delete_after=5.0)
             except asyncio.exceptions.TimeoutError:
                 await message.channel.send('Creating of post timed out. Please try again.', delete_after=5.0)
                 logging.info('{} timed out when creating new event.'.format(member.mention))
@@ -350,7 +332,6 @@ async def on_raw_reaction_add(payload):
             cemoji = await message.guild.fetch_emoji(707790900927135765)
             lfg_type = 'siege'
             member = payload.member
-            quest_board_channel = message.guild.get_channel(708369949831200841)
 
             prompt_siege = await message.channel.send('❗ for Safi jiiva siege, ‼️ for Kulve Taroth siege.', delete_after=30.0)
             await prompt_siege.add_reaction('❗')
@@ -380,21 +361,6 @@ async def on_raw_reaction_add(payload):
                     siege_time.content = '--'
 
                 await addlfg(message, lfg_type=lfg_type, description=siege_monster,member=member,time=siege_time.content)
-                # siege_monster_desc = '```fix\n{}\n```'.format(siege_monster)
-                # e = discord.Embed(description=siege_monster_desc)
-                # e.add_field(name='Time (GMT+8)', value=siege_time.content, inline=False)
-                # e.add_field(name='Hunters: 1', value=member.name, inline=False)
-                # e.set_footer(text='Click 👍 to join/leave siege, ❌ to close siege.')
-                # if siege_monster == "Safi'jiiva":
-                #     e.set_thumbnail(url='https://vignette.wikia.nocookie.net/monsterhunter/images/f/fa/MHWI-Safi%27jiiva_Icon.png/revision/latest/scale-to-width-down/340?cb=20191207161325')
-                # else:
-                #     e.set_thumbnail(url='https://ih0.redbubble.net/image.551722156.9913/flat,550x550,075,f.u3.jpg')
-                # e.set_author(name=member.display_name, icon_url=member.avatar_url)
-                # msg = await quest_board_channel.send(embed=e)
-                # await msg.add_reaction('👍')
-                # await msg.add_reaction('❌')
-
-                #await channel.send('LFG has been posted at {}.'.format(quest_board_channel.mention), delete_after=5.0)
             except asyncio.exceptions.TimeoutError:
                 await message.channel.send('Creating of post timed out. Please try again.', delete_after=5.0)
                 logging.info('{} timed out when creating new siege.'.format(member.mention))
@@ -418,22 +384,32 @@ async def on_raw_reaction_add(payload):
                 return
             if member.id not in list_of_confirm:
                 list_of_confirm.append(member.id)   #add player into confirmed list
-                players_name = []
-                for i in list_of_confirm:   #generate players list
-                    user = client.get_user(i)
-                    players_name.append(user.mention)
                 if member.id in list_of_tentative:
                     list_of_tentative.remove(member.id)
-                    tentative_name = []
-                    for id in list_of_tentative:
-                        user = client.get_user(id)
-                        tentative_name.append(user.mention)
-                new_players = '\n'.join(players_name)
-                no_of_players = len(list_of_confirm)
-                embed.set_field_at(1, name='Confirmed: {}'.format(no_of_players), value=new_players, inline=True)
+                confirm_name = []
+                tentative_name = []
+                for i in list_of_confirm:   #generate confirmed players list
+                    user = client.get_user(i)
+                    confirm_name.append(user.mention)
+                for id in list_of_tentative:    #generate tentative players list
+                    user = client.get_user(id)
+                    tentative_name.append(user.mention)
+                confirmed_players = '\n'.join(confirm_name)
+                no_of_confirm = len(list_of_confirm)
+                tentative_players = '\n'.join(tentative_name)
+                no_of_tentative = len(list_of_tentative)
+                if no_of_tentative == 0:
+                    tentative_players = '--'
+                embed.set_field_at(1, name='Confirmed: {}'.format(no_of_confirm), value=confirmed_players, inline=True)
+                embed.set_field_at(2, name='Tentative: {}'.format(no_of_tentative), value=tentative_players, inline=True)
                 await message.edit(embed=embed)
                 post.confirmed = list_of_confirm
+                post.tentative = list_of_tentative
                 post.save()
+                try:
+                    await message.remove_reaction('❔', member)
+                except discord.errors.HTTPException:
+                    pass
 
         elif emoji_add == 707541604508106818:   #mark session closed :fail:
             await channel.send('Session ID deleted..', delete_after=5.0)
@@ -451,7 +427,7 @@ async def on_raw_reaction_add(payload):
                 await message.delete()
                 post.delete()
             else:
-                await channel.send('{}, Post can only be deleted by the {}.'.format(member.mention,host.mention), delete_after=5.0)
+                await channel.send('{}, post can only be deleted by the {}.'.format(member.mention,host.mention), delete_after=5.0)
                 await message.remove_reaction('❌', payload.member)
 
         elif emoji_add == '🚧':
@@ -459,11 +435,15 @@ async def on_raw_reaction_add(payload):
             embed = message.embeds[0]
             post = Lfg.objects(message_id=message_id).first()
             host = post.confirmed[0]
+            dm_channel = member.dm_channel
+            if dm_channel is None:
+                dm_channel = await member.create_dm()
             if member.id == host:
                 try:
-                    prompt_description = await message.channel.send('What is the updated message? (Type `NA` to skip, `cancel` to quit)')
+                    await message.channel.send('{}, a PM has been sent to you to update your post.'.format(member.mention), delete_after=5.0)
+                    await dm_channel.send('What is the updated message? (Type `NA` to skip, `cancel` to quit)')
                     def check_desc(m):
-                        return m.author == member and m.channel == channel
+                        return m.author == member and m.channel == dm_channel
 
                     new_description = await client.wait_for('message', check=check_desc, timeout=120.0)
                     if new_description.content.lower() == 'na':
@@ -473,9 +453,9 @@ async def on_raw_reaction_add(payload):
                     else:
                         description = new_description.content
 
-                    prompt_time = await message.channel.send('What is the new time? (Type `NA` to skip, `cancel` to quit)')
+                    await dm_channel.send('What is the new time? (Type `NA` to skip, `cancel` to quit)')
                     def check_time(m):
-                        return m.author == member and m.channel == channel
+                        return m.author == member and m.channel == dm_channel
                     new_time = await client.wait_for('message', check=check_time, timeout=120.0)
 
                     if new_time.content.lower() == 'na':
@@ -491,23 +471,20 @@ async def on_raw_reaction_add(payload):
                         embed.set_field_at(0, name='Time:', value=time, inline=False)
                     if description is not None or time is not None:
                         await message.edit(embed=embed)
+                        await dm_channel.send('Post updated in {}.'.format(message.channel.mention))
                 except asyncio.exceptions.TimeoutError:
-                    await message.channel.send('Updating of post timed out. Please try again.', delete_after=5.0)
+                    await dm_channel.send('Updating of post timed out. Please try again.', delete_after=5.0)
                     logging.info('{} timed out when updating post.'.format(member.name))
                     pass
                 finally:
                     try:
                         await message.remove_reaction('🚧', member)
-                        await prompt_description.delete()
-                        await new_description.delete()
-                        await prompt_time.delete()
-                        await new_time.delete()
                     except discord.errors.NotFound:
                         pass
                     except UnboundLocalError:
                         pass
             else:
-                await channel.send('{}, Post can only be edited by the 1st hunter in the list.'.format(member.mention),
+                await channel.send('{}, post can only be edited by the 1st hunter in the list.'.format(member.mention),
                                    delete_after=5.0)
                 await message.remove_reaction('🚧', member)
 
@@ -518,7 +495,8 @@ async def on_raw_reaction_add(payload):
             list_of_tentative = post.tentative
             if post is None:
                 return
-            if len(post.confirmed) <=1 and member.id == post.confirmed[0]:
+            if len(post.confirmed) <=1 and member.id == post.confirmed[0]: #make sure theres at least 1 player in confirmed
+                await message.remove_reaction('❔', member)
                 return
 
             if member.id not in list_of_tentative:
@@ -538,7 +516,7 @@ async def on_raw_reaction_add(payload):
                 no_of_confirm = len(confirm_list)   #get number of confirm
                 tentative_players = '\n'.join(tentative_list)
                 confirm_players = '\n'.join(confirm_list)
-                embed.set_field_at(1,name='Confirm: {}'.format(no_of_confirm), value=confirm_players, inline=True)
+                embed.set_field_at(1,name='Confirmed: {}'.format(no_of_confirm), value=confirm_players, inline=True)
                 embed.set_field_at(2, name='Tentative: {}'.format(no_of_tentative), value=tentative_players, inline=True)
                 await message.edit(embed=embed)
                 post.tentative = list_of_tentative
@@ -548,23 +526,6 @@ async def on_raw_reaction_add(payload):
                     await message.remove_reaction('👍', member)
                 except discord.errors.HTTPException:
                     pass
-
-
-
-                    # member_name = payload.member.name
-            # embed = message.embeds[0]
-            # fields = embed.fields
-            # players = fields[1].value
-            # list_of_players = players.split()
-            # if member_name not in list_of_players:
-            #     list_of_players.append(member_name)
-            #     new_players = '\n'.join(list_of_players)
-            #     no_of_players = len(list_of_players)
-            #     embed.set_field_at(1, name='Hunters: {}'.format(no_of_players), value=new_players, inline=False)
-            #     await message.edit(embed=embed)
-
-
-
 
 @client.event
 async def on_raw_reaction_remove(payload):
@@ -602,6 +563,30 @@ async def on_raw_reaction_remove(payload):
                     embed.set_field_at(1, name='Confirmed: {}'.format(no_of_players), value=new_players, inline=True)
                     await message.edit(embed=embed)
                     post.confirmed = list_of_players
+                    post.save()
+            except discord.errors.HTTPException:
+                pass
+
+        elif emoji_remove == '❔':
+            try:
+                embed = message.embeds[0]
+                post = Lfg.objects(message_id=message_id).first()
+                if post is None:
+                    return
+                list_of_tentative = post.tentative
+                if payload.user_id in list_of_tentative:
+                    list_of_tentative.remove(payload.user_id)
+                    tentative_list = []
+                    for id in list_of_tentative:
+                        user = client.get_user(id)
+                        tentative_list.append(user.mention)
+                    tentative_players = ('\n').join(tentative_list)
+                    no_of_tentative = len(tentative_players)
+                    if no_of_tentative == 0:
+                        tentative_players = '--'
+                    embed.set_field_at(2, name='Tentative: {}'.format(no_of_tentative), value=tentative_players, inline=True)
+                    await message.edit(embed=embed)
+                    post.tentative = list_of_tentative
                     post.save()
             except discord.errors.HTTPException:
                 pass
