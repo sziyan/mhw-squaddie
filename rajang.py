@@ -98,7 +98,7 @@ async def on_message(message):
             cemoji = await message.guild.fetch_emoji(707541604508106818)  #custom emoji to mark session close
             await msg.add_reaction(cemoji)
             await message.delete()
-        except asyncio.exceptions.TimeoutError:
+        except asyncio.TimeoutError:
             logging.info('{} timed out when creating new session.'.format(message.author.display_name))
             await message.channel.send('{} timed out when creating new session.'.format(message.author.display_name), delete_after=5.0)
             pass
@@ -220,7 +220,7 @@ async def on_message(message):
                             except:
                                 pass
                         ask_reaction = False
-            except TimeoutError:
+            except asyncio.TimeoutError:
                 logging.info('{} timeout when using &addreact'.format(member.name))
             finally:
                 try:
@@ -310,9 +310,9 @@ async def on_raw_reaction_add(payload):
                     await event_time.delete()
                     return
                 elif event_time.content.lower() == 'na':
-                    event_time.content = '--'
+                    event_time.content = '{} to contact participants.'.format(member.mention)
                 await addlfg(message=message, lfg_type=lfg_type,description=event_title.content,member=member, time=event_time.content)
-            except asyncio.exceptions.TimeoutError:
+            except asyncio.TimeoutError:
                 await message.channel.send('Creating of post timed out. Please try again.', delete_after=5.0)
                 logging.info('{} timed out when creating new event.'.format(member.mention))
                 pass
@@ -358,10 +358,10 @@ async def on_raw_reaction_add(payload):
                 if siege_time.content.lower() == 'cancel':
                     return
                 elif siege_time.content.lower() == 'na':
-                    siege_time.content = '--'
+                    siege_time.content = '{} to contact participants.'.format(member.mention)
 
                 await addlfg(message, lfg_type=lfg_type, description=siege_monster,member=member,time=siege_time.content)
-            except asyncio.exceptions.TimeoutError:
+            except asyncio.TimeoutError:
                 await message.channel.send('Creating of post timed out. Please try again.', delete_after=5.0)
                 logging.info('{} timed out when creating new siege.'.format(member.mention))
                 pass
@@ -472,7 +472,7 @@ async def on_raw_reaction_add(payload):
                     if description is not None or time is not None:
                         await message.edit(embed=embed)
                         await dm_channel.send('Post updated in {}.'.format(message.channel.mention))
-                except asyncio.exceptions.TimeoutError:
+                except asyncio.TimeoutError:
                     await dm_channel.send('Updating of post timed out. Please try again.', delete_after=5.0)
                     logging.info('{} timed out when updating post.'.format(member.name))
                     pass
