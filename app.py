@@ -53,11 +53,11 @@ logger = logging.getLogger(__name__)
 # context. Error handlers also receive the raised TelegramError object in error.
 
 def check_chat(id):
-    # if id == -1001336587845:
-    #     return True
-    # else:
-    #     return False
-    return True
+    if id == -1001336587845:
+        return True
+    else:
+        return False
+    # return True
 
 def siegestatus():
     msg = []
