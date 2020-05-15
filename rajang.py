@@ -583,7 +583,7 @@ async def on_raw_reaction_remove(payload):
                     tentative_list = []
                     for id in list_of_tentative:
                         member = guild.get_member(id)
-                        tentative_list.append(user.display_name)
+                        tentative_list.append(member.display_name)
                     tentative_players = ('\n').join(tentative_list)
                     no_of_tentative = len(tentative_list)
                     if no_of_tentative == 0:
