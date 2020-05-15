@@ -28,7 +28,7 @@ async def addlfg(message, lfg_type, description, member, time):
     lfg_description = '```fix\n{}\n```'.format(description)
     e = discord.Embed(description=lfg_description)
     e.add_field(name='Time (GMT+8)', value=time, inline=False)
-    e.add_field(name='Confirmed: 1', value=member.mention, inline=True)
+    e.add_field(name='Confirmed: 1', value=member.display_name, inline=True)
     e.add_field(name='Tentative: 0', value='-', inline=True)
     if lfg_type == 'siege':
         if description == "Safi'jiiva":
@@ -390,10 +390,10 @@ async def on_raw_reaction_add(payload):
                 tentative_name = []
                 for i in list_of_confirm:   #generate confirmed players list
                     user = client.get_user(i)
-                    confirm_name.append(user.mention)
+                    confirm_name.append(user.display_name)
                 for id in list_of_tentative:    #generate tentative players list
                     user = client.get_user(id)
-                    tentative_name.append(user.mention)
+                    tentative_name.append(user.display_name)
                 confirmed_players = '\n'.join(confirm_name)
                 no_of_confirm = len(list_of_confirm)
                 tentative_players = '\n'.join(tentative_name)
@@ -508,10 +508,10 @@ async def on_raw_reaction_add(payload):
                 tentative_list = []
                 for id in list_of_confirm:  #generate players in confirm list for output
                     user = client.get_user(id)
-                    confirm_list.append(user.mention)
+                    confirm_list.append(user.display_name)
                 for id in list_of_tentative:  #generate tentative players list for output
                     user = client.get_user(id)
-                    tentative_list.append(user.mention)
+                    tentative_list.append(user.display_name)
                 no_of_tentative = len(tentative_list)   #get number of tentative
                 no_of_confirm = len(confirm_list)   #get number of confirm
                 tentative_players = '\n'.join(tentative_list)
@@ -557,7 +557,7 @@ async def on_raw_reaction_remove(payload):
                     player_list = []
                     for id in list_of_players:
                         user = client.get_user(id)
-                        player_list.append(user.mention)
+                        player_list.append(user.display_name)
                     new_players = ('\n').join(player_list)
                     no_of_players = len(player_list)
                     embed.set_field_at(1, name='Confirmed: {}'.format(no_of_players), value=new_players, inline=True)
@@ -579,7 +579,7 @@ async def on_raw_reaction_remove(payload):
                     tentative_list = []
                     for id in list_of_tentative:
                         user = client.get_user(id)
-                        tentative_list.append(user.mention)
+                        tentative_list.append(user.display_name)
                     tentative_players = ('\n').join(tentative_list)
                     no_of_tentative = len(tentative_list)
                     if no_of_tentative == 0:
