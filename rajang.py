@@ -131,7 +131,9 @@ async def on_message(message):
 
 
 
-
+    elif message.content.startswith('!test'):
+        member = message.author
+        print(member.display_name)
 ############## ADMIN COMMANDS ###################
 
     elif message.content.startswith('&logoff'):
@@ -264,6 +266,7 @@ async def on_raw_reaction_add(payload):
     channel_id = payload.channel_id
     channel = client.get_channel(channel_id)
     message = await channel.fetch_message(message_id)
+    guild = message.guild
     user = client.get_user(payload.user_id)
     bot_added_reactions = message.reactions #reactions that was added by bot in message
     if payload.emoji.is_custom_emoji() is True: #if user add emoji is custom
@@ -389,11 +392,11 @@ async def on_raw_reaction_add(payload):
                 confirm_name = []
                 tentative_name = []
                 for i in list_of_confirm:   #generate confirmed players list
-                    user = client.get_user(i)
-                    confirm_name.append(user.display_name)
+                    member = guild.get_member(i)
+                    confirm_name.append(member.display_name)
                 for id in list_of_tentative:    #generate tentative players list
-                    user = client.get_user(id)
-                    tentative_name.append(user.display_name)
+                    member = guild.get_member(id)
+                    tentative_name.append(member.display_name)
                 confirmed_players = '\n'.join(confirm_name)
                 no_of_confirm = len(list_of_confirm)
                 tentative_players = '\n'.join(tentative_name)
@@ -507,11 +510,11 @@ async def on_raw_reaction_add(payload):
                 confirm_list = []
                 tentative_list = []
                 for id in list_of_confirm:  #generate players in confirm list for output
-                    user = client.get_user(id)
-                    confirm_list.append(user.display_name)
+                    member = guild.get_member(id)
+                    confirm_list.append(member.display_name)
                 for id in list_of_tentative:  #generate tentative players list for output
-                    user = client.get_user(id)
-                    tentative_list.append(user.display_name)
+                    member = guild.get_member(id)
+                    tentative_list.append(member.display_name)
                 no_of_tentative = len(tentative_list)   #get number of tentative
                 no_of_confirm = len(confirm_list)   #get number of confirm
                 tentative_players = '\n'.join(tentative_list)
@@ -533,6 +536,7 @@ async def on_raw_reaction_remove(payload):
     channel_id = payload.channel_id
     channel = client.get_channel(channel_id)
     message = await channel.fetch_message(message_id)
+    guild = message.guild
     emoji_remove = payload.emoji.name
     user = client.get_user(payload.user_id)
     bot_added_reactions = message.reactions
@@ -556,8 +560,8 @@ async def on_raw_reaction_remove(payload):
                     list_of_players.remove(payload.user_id)
                     player_list = []
                     for id in list_of_players:
-                        user = client.get_user(id)
-                        player_list.append(user.display_name)
+                        member = guild.get_member(id)
+                        player_list.append(member.display_name)
                     new_players = ('\n').join(player_list)
                     no_of_players = len(player_list)
                     embed.set_field_at(1, name='Confirmed: {}'.format(no_of_players), value=new_players, inline=True)
@@ -578,7 +582,7 @@ async def on_raw_reaction_remove(payload):
                     list_of_tentative.remove(payload.user_id)
                     tentative_list = []
                     for id in list_of_tentative:
-                        user = client.get_user(id)
+                        member = guild.get_member(id)
                         tentative_list.append(user.display_name)
                     tentative_players = ('\n').join(tentative_list)
                     no_of_tentative = len(tentative_list)
