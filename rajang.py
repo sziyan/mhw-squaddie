@@ -581,7 +581,7 @@ async def on_raw_reaction_remove(payload):
                         user = client.get_user(id)
                         tentative_list.append(user.mention)
                     tentative_players = ('\n').join(tentative_list)
-                    no_of_tentative = len(tentative_players)
+                    no_of_tentative = len(tentative_list)
                     if no_of_tentative == 0:
                         tentative_players = '--'
                     embed.set_field_at(2, name='Tentative: {}'.format(no_of_tentative), value=tentative_players, inline=True)
