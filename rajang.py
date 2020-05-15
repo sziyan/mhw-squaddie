@@ -38,8 +38,8 @@ async def addlfg(message, lfg_type, description, member, time):
             e.set_thumbnail(url='https://ih0.redbubble.net/image.551722156.9913/flat,550x550,075,f.u3.jpg')
     e.set_footer(text='|👍 - Attending |❔ - Tentative | ❌ - Delete | 🚧 - Update |')
     e.set_author(name=member.display_name, icon_url=member.avatar_url)
-    msg = await quest_board_channel.send(embed=e)
-    #msg = await message.channel.send(embed=e)
+    #msg = await quest_board_channel.send(embed=e)
+    msg = await message.channel.send(embed=e)
     lfg_session = Lfg(message_id=msg.id, confirmed=[member.id])
     await msg.add_reaction('👍')
     await msg.add_reaction('❔')
@@ -392,11 +392,11 @@ async def on_raw_reaction_add(payload):
                 confirm_name = []
                 tentative_name = []
                 for i in list_of_confirm:   #generate confirmed players list
-                    member = guild.get_member(i)
-                    confirm_name.append(member.display_name)
+                    m = guild.get_member(i)
+                    confirm_name.append(m.display_name)
                 for id in list_of_tentative:    #generate tentative players list
-                    member = guild.get_member(id)
-                    tentative_name.append(member.display_name)
+                    m = guild.get_member(id)
+                    tentative_name.append(m.display_name)
                 confirmed_players = '\n'.join(confirm_name)
                 no_of_confirm = len(list_of_confirm)
                 tentative_players = '\n'.join(tentative_name)
@@ -510,11 +510,11 @@ async def on_raw_reaction_add(payload):
                 confirm_list = []
                 tentative_list = []
                 for id in list_of_confirm:  #generate players in confirm list for output
-                    member = guild.get_member(id)
-                    confirm_list.append(member.display_name)
+                    m = guild.get_member(id)
+                    confirm_list.append(m.display_name)
                 for id in list_of_tentative:  #generate tentative players list for output
-                    member = guild.get_member(id)
-                    tentative_list.append(member.display_name)
+                    m = guild.get_member(id)
+                    tentative_list.append(m.display_name)
                 no_of_tentative = len(tentative_list)   #get number of tentative
                 no_of_confirm = len(confirm_list)   #get number of confirm
                 tentative_players = '\n'.join(tentative_list)
