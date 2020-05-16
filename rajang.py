@@ -11,6 +11,7 @@ from mongoengine import connect
 client = discord.Client()
 logging.basicConfig(level=logging.INFO, filename='discord_output.log', filemode='a', format='%(asctime)s %(levelname)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 logging.info("Bot started succesfully.")
+logger = logging.getLogger(__name__)
 
 db = connect('sg', host=Config.host)
 
@@ -19,14 +20,15 @@ class Lfg(Document):
     confirmed = ListField(IntField())
     tentative = ListField(IntField())
     time = StringField()
+    lfg_type = StringField()
 
-#mod_role_name = [The Asian Squad - GrandBotMaster, Ascenion - Admin]
-MOD_ROLE_ID = [706468834235645954, 100920245190946816]
+#mod_role_name = [The Asian Squad - GrandBotMaster, Ascenion - Admin, coop]
+MOD_ROLE_ID = [706468834235645954, 100920245190946816, 633909898295377920]
 
 async def addlfg(message, lfg_type, description, member, time):
     quest_board_channel = message.guild.get_channel(708369949831200841)
     lfg_description = '```fix\n{}\n```'.format(description)
-    e = discord.Embed(description=lfg_description)
+    e = discord.Embed(description=lfg_description, color=discord.Color.red())
     e.add_field(name='Time (GMT+8)', value=time, inline=False)
     e.add_field(name='Confirmed: 1', value=member.display_name, inline=True)
     e.add_field(name='Tentative: 0', value='-', inline=True)
@@ -40,13 +42,30 @@ async def addlfg(message, lfg_type, description, member, time):
     e.set_author(name=member.display_name, icon_url=member.avatar_url)
     msg = await quest_board_channel.send(embed=e)
     #msg = await message.channel.send(embed=e)
-    lfg_session = Lfg(message_id=msg.id, confirmed=[member.id])
+    lfg_session = Lfg(message_id=msg.id, confirmed=[member.id], lfg_type=lfg_type)
     await msg.add_reaction('👍')
     await msg.add_reaction('❔')
     await msg.add_reaction('❌')
     await msg.add_reaction('🚧')
     lfg_session.save()
     await message.channel.send('LFG has been posted at {}.'.format(quest_board_channel.mention), delete_after=5.0)
+    logger.info('{} added {}.'.format(member.display_name, lfg_type))
+
+async def check_mod(guild, member, baseline=None):
+    top_role_position = member.top_role.position
+    mod_role_position = []
+    for id in MOD_ROLE_ID:
+        role = guild.get_role(id)
+        if role is not None:
+            mod_role_position.append(role.position)
+    if baseline is not None:
+        role = guild.get_role(baseline)
+        if role is not None:
+            mod_role_position.append(role.position)
+    for pos in mod_role_position:
+        if top_role_position >= pos:
+            return True
+    return False
 
 
 @client.event
@@ -95,20 +114,27 @@ async def on_message(message):
             embed.set_footer(text='Added on {}'.format(now))
             embed.set_author(name=message.author.display_name,icon_url=message.author.avatar_url)
             msg = await channel.send(embed=embed)
+            #msg = await message.channel.send(embed=embed)
             cemoji = await message.guild.fetch_emoji(707541604508106818)  #custom emoji to mark session close
             await msg.add_reaction(cemoji)
-            await message.delete()
+            logger.info('{} added session "{}"'.format(message.author.display_name, session))
         except asyncio.TimeoutError:
-            logging.info('{} timed out when creating new session.'.format(message.author.display_name))
+            logger.info('{} timed out when creating new session.'.format(message.author.display_name))
             await message.channel.send('{} timed out when creating new session.'.format(message.author.display_name), delete_after=5.0)
             pass
         finally:
-            if prompt_session_id is not None:
+            try:
+                await message.delete()
                 await prompt_session_id.delete()
                 await session_id_reply.delete()
-            if prompt_session_title is not None:
                 await prompt_session_title.delete()
                 await session_title_reply.delete()
+            except discord.errors.NotFound:
+                pass
+            except UnboundLocalError:
+                pass
+            except AttributeError:
+                pass
 
     elif message.content.startswith('/addlfg'):
         channel = message.channel
@@ -133,7 +159,10 @@ async def on_message(message):
 
     elif message.content.startswith('!test'):
         member = message.author
-        print(member.display_name)
+        if await check_mod(message.guild, member, baseline=633909898295377920) is True:
+            print('true')
+        else:
+            print('false')
 ############## ADMIN COMMANDS ###################
 
     elif message.content.startswith('&logoff'):
@@ -386,6 +415,13 @@ async def on_raw_reaction_add(payload):
             if post is None:
                 return
             if member.id not in list_of_confirm:
+                if (len(list_of_confirm) >=4 and post.lfg_type == 'event') or (len(list_of_confirm) >=16 and post.lfg_type == 'siege'):
+                    await message.channel.send('{}, Apologies, but party is full. Kindly register your interest as tentative instead.'.format(member.mention), delete_after=5.0)
+                    try:
+                        await message.remove_reaction('👍', member)
+                    except discord.errors.HTTPException:
+                        pass
+                    return
                 list_of_confirm.append(member.id)   #add player into confirmed list
                 if member.id in list_of_tentative:
                     list_of_tentative.remove(member.id)
@@ -415,8 +451,24 @@ async def on_raw_reaction_add(payload):
                     pass
 
         elif emoji_add == 707541604508106818:   #mark session closed :fail:
-            await channel.send('Session ID deleted..', delete_after=5.0)
-            await message.delete()
+            embed = message.embeds[0]
+            cemoji = await message.guild.fetch_emoji(707541604508106818)
+            session_id = embed.fields[0].value
+            author = embed.author
+            mod_logs_channel = guild.get_channel(711165655939809291)
+            if author == payload.member.display_name or await check_mod(message.guild, payload.member, baseline=706481118152491061) is True:    #baseline set as veteran
+                await channel.send('Session ID deleted by {}..'.format(payload.member.mention), delete_after=5.0)
+                await message.delete()
+                logger.info('Session ID {} deleted by {}'.format(session_id, payload.member.display_name))
+            else:
+                await channel.send('{}, thank you for informing that the session is closed. \nMods will verify and close if neccessary.'.format(payload.member.mention),delete_after=10.0)
+                await message.remove_reaction(cemoji, payload.member)
+                embed = discord.Embed(description='```fix\nA session is reported as closed!\n```', color=discord.Color.gold())
+                embed.add_field(name='Reported message', value='[Jump to message]({})'.format(message.jump_url))
+                embed.set_footer(text='Reported by {}'.format(payload.member.display_name), icon_url=payload.member.avatar_url)
+                msg = await mod_logs_channel.send(embed=embed)
+                await msg.add_reaction('💫')
+                logger.info('{} attempted to delete session ID'.format(payload.member.name))
 
         elif emoji_add == '❌':
             member = payload.member
@@ -529,6 +581,10 @@ async def on_raw_reaction_add(payload):
                     await message.remove_reaction('👍', member)
                 except discord.errors.HTTPException:
                     pass
+        elif emoji_add == '💫':
+            await message.delete()
+            await message.channel.send('Reported log resolved by {}..'.format(payload.member.mention), delete_after=5.0)
+            logger.info('Log resolved by {}..'.format(payload.member.display_name))
 
 @client.event
 async def on_raw_reaction_remove(payload):
