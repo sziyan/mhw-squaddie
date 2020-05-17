@@ -574,8 +574,7 @@ def new_member(update,context):
     if check_chat(update.message.chat.id):
         for member in update.message.new_chat_members:
             newcomer = member.first_name
-            keyboard = [[InlineKeyboardButton("Rules", url='https://telegra.ph/Rules-and-Community-Guidelines-04-05'),
-                         InlineKeyboardButton("Squad Spreadsheet", url='https://docs.google.com/spreadsheets/d/1BOgecU-LdpHjZX_ruCRqoWgfzea-WTT9zYSnzmNzauA/edit#gid=0'), InlineKeyboardButton('Discord', url='https://discord.gg/kPcArjT')]]
+            keyboard = [[InlineKeyboardButton('Discord', url='https://discord.gg/kPcArjT')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
             welcome_list = ["Keep your palicoes! <b>{}</b> is here to hunt!!".format(newcomer),
                             "<b>{}</b> is here to slay some Great Jagras!".format(newcomer),
