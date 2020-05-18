@@ -22,6 +22,18 @@ class Lfg(Document):
     time = StringField()
     lfg_type = StringField()
 
+class Player(Document):
+    player_id = IntField(required=True)
+    display_name = StringField()
+    remarks = StringField()
+    forest = IntField()
+    wildspire = IntField()
+    coral = IntField()
+    rotted = IntField()
+    volcanic = IntField()
+    tundra = IntField()
+
+
 #mod_role_name = [The Asian Squad - GrandBotMaster, Ascenion - Admin, coop]
 MOD_ROLE_ID = [706468834235645954, 100920245190946816, 633909898295377920]
 
@@ -77,6 +89,7 @@ async def on_ready():
 async def on_message(message):
     if message.author == client.user:
         return
+    guild = message.guild
 ######## USER COMMANDS ###############
 
     if message.content.startswith('/addsession'):
@@ -146,6 +159,23 @@ async def on_message(message):
         await msg.add_reaction(event_button)
         await msg.add_reaction(siege_button)
 
+    elif message.content.startswith('/addcard'):
+        member = message.author
+        display_name = member.display_name
+        await message.channel.send('Creating guild card for {}..'.format(member.mention))
+        prompt_description = await message.channel.send('Enter a description for your guild card (`NA` to skip, `cancel` to cancel card creation)')
+        def check_desc(m):
+            return m.channel == message.channel and m.author == message.author
+        desc = await client.wait_for('message', check=check_desc, timeout=120.0)
+        if desc.content.lower() == 'na':
+            description = '--'
+        elif desc.content == 'cancel'
+            return
+        else:
+            description = desc.content
+
+
+
 
     elif message.content.startswith('/help'):
         content = 'Available commands are: \n' \
@@ -156,6 +186,10 @@ async def on_message(message):
         await message.channel.send(content)
 
 
+
+
+
+###### test command #####
 
     elif message.content.startswith('!test'):
         member = message.author
@@ -288,6 +322,12 @@ async def on_message(message):
             await prompt_msg_id.delete()
             await new_sos_msg.delete()
             await msg_id_content.delete()
+
+    elif message.content.startswith('&mute'):
+        member_list = message.mentions
+        for member in member_list:
+            await member.edit(mute=True, reason='Muted by {}'.format(message.author.display_name))
+            await message.channel.send('{} muted by {}'.format(member.display_name, message.author.display_name))
 
 @client.event
 async def on_raw_reaction_add(payload):
