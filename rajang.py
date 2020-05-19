@@ -79,7 +79,6 @@ async def check_mod(guild, member, baseline=None):
             return True
     return False
 
-
 @client.event
 async def on_ready():
     await client.change_presence(activity=discord.Game(name="/help for info"))
@@ -90,6 +89,48 @@ async def on_message(message):
     if message.author == client.user:
         return
     guild = message.guild
+
+    def add_card():
+        member = message.author
+        display_name = member.display_name
+        guiding_lands = ['Forest', 'Wildspire Waste', 'Coral', 'Rotted', 'Volcanic', 'Tundra']
+        gl_levels = []
+
+        await message.channel.send('Creating guild card for {}..'.format(member.mention))
+        await message.channel.send(
+            'Enter a description for your guild card (`NA` to skip, `cancel` to cancel card creation)')
+        def check_desc(m):
+            return m.channel == message.channel and m.author == message.author
+        desc = await client.wait_for('message', check=check_desc, timeout=120.0)
+        if desc.content.lower() == 'na':
+            description = '--'
+        elif desc.content == 'cancel':
+            return
+        else:
+            description = desc.content
+        for lands in guiding_lands:
+            await message.channel.send('Enter level of {} (`cancel` to exit)'.format(lands))
+            def check_lands(m):
+                return m.channel == message.channel and m.author == message.author
+            gl_lvl = await client.wait_for('message', check=check_lands, timeout=120.0)
+            try:
+                if gl_lvl.content == 'cancel':
+                    return
+                elif int(gl_lvl.content) > 0:
+                    gl_levels.append(int(gl_lvl.content))
+                else:
+                    await message.channel.send('Input is not a number! Exiting..')
+                    return
+            except ValueError:
+                await message.channel.send('Input is not a number! Exiting..')
+                return
+        forest = gl_levels[0]
+        
+
+
+
+
+
 ######## USER COMMANDS ###############
 
     if message.content.startswith('/addsession'):
@@ -169,7 +210,7 @@ async def on_message(message):
         desc = await client.wait_for('message', check=check_desc, timeout=120.0)
         if desc.content.lower() == 'na':
             description = '--'
-        elif desc.content == 'cancel'
+        elif desc.content == 'cancel':
             return
         else:
             description = desc.content

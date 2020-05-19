@@ -1,3 +1,4 @@
-num = '3'
+num = 5
 
-print(num.isdigit())
+if num.isdecimal() is True:
+
