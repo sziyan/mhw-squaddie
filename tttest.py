@@ -1,4 +1,5 @@
-num = 5
-
-if num.isdecimal() is True:
+import re
+session = '```fix\nwosh\n```'
+session_id = re.findall("```fix\W+(\w+)\W```", session)[0]
+print(session_id)
 
