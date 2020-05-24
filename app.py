@@ -584,8 +584,7 @@ def new_member(update,context):
                             "🐋 cum <b>{}</b> to the hunting hall.".format(newcomer),
                             "<b>{}</b> is here to cook us some raw meat.".format(newcomer)]
             index = random.randrange(0,len(welcome_list),1)
-            update.message.reply_html("{} \nMake sure to read the <b>rules</b> and add your PSN ID/IGN to the <b>squad spreadsheet</b> by using the buttons below.\n"
-                                      "We have started our migration to Discord! Join us there!".format(welcome_list[index]), reply_markup=reply_markup)
+            update.message.reply_html("{} \nWe have migrated to Discord! Click the button below to join us there!".format(welcome_list[index]), reply_markup=reply_markup)
 
 def member_left(update,context):
     if check_chat(update.message.chat.id):
