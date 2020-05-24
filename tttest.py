@@ -1,3 +1,6 @@
-num = '3'
+test = {'1':'2'}
 
-print(num.isdigit())
+test['3'] = '4'
+
+print(test)
+
