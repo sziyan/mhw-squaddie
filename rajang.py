@@ -109,7 +109,7 @@ async def on_message(message):
         desc = await client.wait_for('message', check=check_desc, timeout=120.0)
         if desc.content.lower() == 'na':
             description = '--'
-        elif desc.content == 'cancel':
+        elif desc.content.lower() == 'cancel':
             return
         else:
             description = desc.content
@@ -119,15 +119,15 @@ async def on_message(message):
                 return m.channel == message.channel and m.author == message.author
             gl_lvl = await client.wait_for('message', check=check_lands, timeout=120.0)
             try:
-                if gl_lvl.content == 'cancel':
+                if gl_lvl.content.lower() == 'cancel':
                     return
-                elif int(gl_lvl.content) > 0 and int(gl_lvl.content) <=7:
+                elif int(gl_lvl.content) > 0 and int(gl_lvl.content) <=7:   #ensure input is between level 1 and 7
                     gl_levels.append(int(gl_lvl.content))
                 else:
-                    await message.channel.send('Incorrect input! Exiting..')
+                    await message.channel.send('Incorrect input! Exiting guild card creation..')    #if input is less then 1 or more then 7
                     return
             except ValueError:
-                await message.channel.send('Input is not a number! Exiting..')
+                await message.channel.send('Input is not a number! Exiting guild card creation..')  #if input is not a number
                 return
         forest = gl_levels[0]
         wildspire = gl_levels[1]
@@ -141,21 +141,24 @@ async def on_message(message):
         await showcard(card)
 
     async def showcard(card):
-        display_name = card.display_name
+        if card.display_name != message.author.display_name:
+            card.display_name = message.author.display_name
+            card.save()
         description = card.remarks
         e = discord.Embed(title='Guild Card', description='```fix\n{}\n```'.format(description),
                           color=discord.Color.dark_orange())
-        e.set_author(name=display_name, icon_url=member.avatar_url)
+        e.set_author(name=card.display_name, icon_url=member.avatar_url)
         for i in range(0, len(GUIDING_LANDS)):
-            e.add_field(name=GUIDING_LANDS[i], value=card.__getitem__(GUIDING_LANDS[i]), inline=True)
+            e.add_field(name=GUIDING_LANDS[i].capitalize(), value=card.__getitem__(GUIDING_LANDS[i]), inline=True)
         await message.channel.send(embed=e)
 
     async def updatecards(card):
         gl_string = ''
+        newData = None
         for lands in GUIDING_LANDS:
             gl_string += '`{}`, '.format(lands.capitalize())
         gl_string = gl_string[:-2]  #because last character is a space, 2nd last is a comma
-        await message.channel.send('Type the category for update.\nAvailable categories are: `description`, {}'.format(gl_string))
+        await message.channel.send('Type the category for update.\nAvailable categories are: `cancel`, `description`, {}'.format(gl_string))
         def check_option(m):
             return m.author == message.author and m.channel == message.channel
         option = await client.wait_for('message', check=check_option, timeout=120.0)
@@ -168,16 +171,33 @@ async def on_message(message):
             description = description.content
             newData = {'remarks':description}
         elif option in GUIDING_LANDS:
-            await message.channel.send('Enter guilding land level')
+            await message.channel.send('Enter guilding land level, or `cancel`')
             def check_levels(m):
                 return m.author == message.author and m.channel == message.channel
             level = await client.wait_for('message', check=check_levels, timeout=120.0)
-            newData = {option: int(level.content)}
+            level = level.content.lower()
+            try:
+                if level == 'cancel':
+                    return
+                elif int(level) >= 1 and int(level) <=7:
+                    newData = {option: int(level)}
+                else:
+                    await message.channel.send('Incorrect input! Exiting guild card creation..')
+                    return
+            except ValueError:
+                await message.channel.send('Input is not a number! Exiting guild card creation..')
+
+        elif option == 'cancel':
+            await message.channel.send('Cancelled guild card updating.')
+            return
         else:
             await message.channel.send('Incorrect option! Exiting..')
             return
-        card.update(**newData)
-        card.reload()
+        if card.display_name != message.author.display_name:
+            newData['display_name'] = message.author.display_name
+        if newData is not None:
+            card.update(**newData)
+            card.reload()
         await message.channel.send('Guild card updated!')
         await showcard(card)
 
@@ -262,7 +282,10 @@ async def on_message(message):
 
     elif message.content.startswith('/showcard'):
         card = Player.objects(player_id=message.author.id).first()
-        await showcard(card)
+        if card is None:
+            await message.channel.send('{}, guild card not found. Type `/card` to create guild card.'.format(message.author.mention))
+        else:
+            await showcard(card)
 
 
     elif message.content.startswith('/help'):
