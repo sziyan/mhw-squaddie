@@ -99,6 +99,8 @@ async def on_message(message):
 
     async def add_card():
         display_name = member.display_name
+
+        
         guiding_lands = GUIDING_LANDS
         gl_levels = []
 
@@ -141,13 +143,15 @@ async def on_message(message):
         await showcard(card)
 
     async def showcard(card):
-        if card.display_name != message.author.display_name:
+        if (card.display_name != message.author.display_name) and (card.player_id == message.author.id):
             card.display_name = message.author.display_name
             card.save()
         description = card.remarks
+        player_id = card.player_id
+        card_member = message.guild.get_member(player_id)
         e = discord.Embed(title='Guild Card', description='```fix\n{}\n```'.format(description),
                           color=discord.Color.dark_orange())
-        e.set_author(name=card.display_name, icon_url=member.avatar_url)
+        e.set_author(name=card.display_name, icon_url=card_member.avatar_url)
         for i in range(0, len(GUIDING_LANDS)):
             e.add_field(name=GUIDING_LANDS[i].capitalize(), value=card.__getitem__(GUIDING_LANDS[i]), inline=True)
         await message.channel.send(embed=e)
@@ -281,8 +285,16 @@ async def on_message(message):
             await updatecards(card)
 
     elif message.content.startswith('/showcard'):
-        card = Player.objects(player_id=message.author.id).first()
-        if card is None:
+        user_search = message.content[10:]
+        print('this: ' + user_search)
+        if len(user_search) == 0:
+            card = Player.objects(player_id=message.author.id).first()
+        else:
+            searched_member = message.guild.get_member_named(user_search)
+            card = Player.objects(player_id=searched_member.id).first()
+        if card is None and len(user_search) > 0:
+            await message.channel.send('{}, guild card for {} not found. '.format(message.author.mention, user_search))
+        elif card is None:
             await message.channel.send('{}, guild card not found. Type `/card` to create guild card.'.format(message.author.mention))
         else:
             await showcard(card)
