@@ -584,6 +584,7 @@ def new_member(update,context):
                             "🐋 cum <b>{}</b> to the hunting hall.".format(newcomer),
                             "<b>{}</b> is here to cook us some raw meat.".format(newcomer)]
             index = random.randrange(0,len(welcome_list),1)
+
             update.message.reply_html("{} \nWe have migrated to Discord! Click the button below to join us there!".format(welcome_list[index]), reply_markup=reply_markup)
 
 def member_left(update,context):
