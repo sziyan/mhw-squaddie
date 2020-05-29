@@ -9,6 +9,7 @@ from mongoengine import *
 from mongoengine import connect
 import re
 import time
+from mongoengine.queryset.visitor import Q
 
 client = discord.Client()
 logging.basicConfig(level=logging.INFO, filename='discord_output.log', filemode='a', format='%(asctime)s %(levelname)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
@@ -99,8 +100,6 @@ async def on_message(message):
 
     async def add_card():
         display_name = member.display_name
-
-        
         guiding_lands = GUIDING_LANDS
         gl_levels = []
 
@@ -162,7 +161,7 @@ async def on_message(message):
         for lands in GUIDING_LANDS:
             gl_string += '`{}`, '.format(lands.capitalize())
         gl_string = gl_string[:-2]  #because last character is a space, 2nd last is a comma
-        await message.channel.send('Type the category for update.\nAvailable categories are: `cancel`, `description`, {}'.format(gl_string))
+        await message.channel.send('Type the category for update.\nAvailable categories are: `cancel`, `description`, `available`, {}'.format(gl_string))
         def check_option(m):
             return m.author == message.author and m.channel == message.channel
         option = await client.wait_for('message', check=check_option, timeout=120.0)
@@ -174,6 +173,18 @@ async def on_message(message):
             description = await client.wait_for('message',check=check_desc, timeout=120.0)
             description = description.content
             newData = {'remarks':description}
+        elif option == 'available':
+            await message.channel.send('Enter `True` or `False` to set your available status.')
+            def avail(m):
+                return m.author == message.author and m.channel == message.channel
+            status = await client.wait_for('message', check=avail, timeout=120.0)
+            status = status.content
+            if status == 'true':
+                card.available = True
+            elif status == 'false':
+                card.available = False
+            else:
+                await message.channel.send('Incorrect option.')
         elif option in GUIDING_LANDS:
             await message.channel.send('Enter guilding land level, or `cancel`')
             def check_levels(m):
@@ -204,6 +215,11 @@ async def on_message(message):
             card.reload()
         await message.channel.send('Guild card updated!')
         await showcard(card)
+
+    async def searchCards(gl_type):
+        search = {}
+        search[gl_type] = 6
+        lands = Player.objects(**search).first()
 
 
 
@@ -286,7 +302,6 @@ async def on_message(message):
 
     elif message.content.startswith('/showcard'):
         user_search = message.content[10:]
-        print('this: ' + user_search)
         if len(user_search) == 0:
             card = Player.objects(player_id=message.author.id).first()
         else:
@@ -298,7 +313,9 @@ async def on_message(message):
             await message.channel.send('{}, guild card not found. Type `/card` to create guild card.'.format(message.author.mention))
         else:
             await showcard(card)
-
+    elif message.content.startswith('/searchcard'):
+        land = message.content[12:]
+        await searchCards(land)
 
     elif message.content.startswith('/help'):
         content = 'Available commands are: \n' \
