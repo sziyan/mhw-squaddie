@@ -37,3 +37,15 @@ class Config:
     	host = "mongodb connection"
 	token = 'telegram token'
 ```
+
+### MHW Discord Bot
+
+This bot serves the purpose of organizing sieges/quests and sieges into different discord text channels.
+
+The following commands are available:
+
+- /addlfg
+- /addsession
+- /help
+- /card
+- /showcard

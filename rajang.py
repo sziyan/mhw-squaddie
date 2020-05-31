@@ -9,6 +9,7 @@ from mongoengine import *
 from mongoengine import connect
 import re
 import time
+from querysets import GuidingLandsQuery
 
 client = discord.Client()
 logging.basicConfig(level=logging.INFO, filename='discord_output.log', filemode='a', format='%(asctime)s %(levelname)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
@@ -28,17 +29,14 @@ class Player(Document):
     player_id = IntField(required=True)
     display_name = StringField()
     remarks = StringField()
-    forest = IntField()
-    wildspire = IntField()
-    coral = IntField()
-    rotted = IntField()
-    volcanic = IntField()
-    tundra = IntField()
+    levels = DictField()
     available = BooleanField(default=False)
 
+    meta = {'queryset_class': GuidingLandsQuery}
 
-#mod_role_name = [The Asian Squad - GrandBotMaster, Ascenion - Admin, coop]
-MOD_ROLE_ID = [706468834235645954, 100920245190946816, 633909898295377920]
+
+#mod_role_name = [The Asian Squad - GrandBotMaster, Ascenion - Admin]
+MOD_ROLE_ID = [706468834235645954, 100920245190946816]
 GUIDING_LANDS = ['forest', 'wildspire', 'coral', 'rotted', 'volcanic', 'tundra']
 
 async def addlfg(message, lfg_type, description, member, time):
@@ -100,16 +98,17 @@ async def on_message(message):
     async def add_card():
         display_name = member.display_name
         guiding_lands = GUIDING_LANDS
-        gl_levels = []
+        gl_levels = {}
 
         await message.channel.send(
-            'Enter a description for your guild card (`NA` to skip, `cancel` to cancel card creation)')
+            'Enter a description for your guild card (other options: `skip`, `cancel`')
         def check_desc(m):
             return m.channel == message.channel and m.author == message.author
         desc = await client.wait_for('message', check=check_desc, timeout=120.0)
-        if desc.content.lower() == 'na':
+        if desc.content.lower() == 'skip':
             description = '--'
         elif desc.content.lower() == 'cancel':
+            await message.channel.send('Exit guild card creation')
             return
         else:
             description = desc.content
@@ -122,43 +121,54 @@ async def on_message(message):
                 if gl_lvl.content.lower() == 'cancel':
                     return
                 elif int(gl_lvl.content) > 0 and int(gl_lvl.content) <=7:   #ensure input is between level 1 and 7
-                    gl_levels.append(int(gl_lvl.content))
+                    gl_levels[lands] = int(gl_lvl.content)
                 else:
                     await message.channel.send('Incorrect input! Exiting guild card creation..')    #if input is less then 1 or more then 7
                     return
             except ValueError:
                 await message.channel.send('Input is not a number! Exiting guild card creation..')  #if input is not a number
                 return
-        forest = gl_levels[0]
-        wildspire = gl_levels[1]
-        coral = gl_levels[2]
-        rotted = gl_levels[3]
-        volcanic = gl_levels[4]
-        tundra = gl_levels[5]
-        card = Player(player_id=member.id, display_name=display_name, remarks= description, forest=forest, wildspire=wildspire, coral=coral,
-                      rotted=rotted,volcanic=volcanic,tundra=tundra)
+        await message.channel.send('Allow other hunters to search for your guild card?(yes or no)')
+        def check_avail(m):
+            return m.channel == message.channel and m.author == message.author
+        avail = await client.wait_for('message', check=check_avail, timeout=120.0)
+        avail = avail.content.lower()
+        if avail == 'yes':
+            available = True
+        elif avail == 'false':
+            available = False
+        else:
+            await message.channel.send('Invalid option')
+            return
+        card = Player(player_id=member.id, display_name=display_name, remarks= description, levels=gl_levels, available=available)
         card.save()
         await showcard(card)
 
     async def showcard(card):
-        if card.display_name != message.author.display_name:
+        if (card.display_name != message.author.display_name) and (card.player_id == message.author.id):
             card.display_name = message.author.display_name
             card.save()
+            card.reload()
         description = card.remarks
+        player_id = card.player_id
+        levels = card.levels
+        available = card.available
+        card_member = message.guild.get_member(player_id)
         e = discord.Embed(title='Guild Card', description='```fix\n{}\n```'.format(description),
                           color=discord.Color.dark_orange())
-        e.set_author(name=card.display_name, icon_url=member.avatar_url)
-        for i in range(0, len(GUIDING_LANDS)):
-            e.add_field(name=GUIDING_LANDS[i].capitalize(), value=card.__getitem__(GUIDING_LANDS[i]), inline=True)
+        e.set_author(name=card.display_name, icon_url=card_member.avatar_url)
+        for land,lvl in levels.items():
+            e.add_field(name=land.capitalize(), value=lvl, inline=True)
+        e.add_field(name='Availability', value=available)
         await message.channel.send(embed=e)
 
     async def updatecards(card):
         gl_string = ''
-        newData = None
+        levels = card.levels
         for lands in GUIDING_LANDS:
             gl_string += '`{}`, '.format(lands.capitalize())
-        gl_string = gl_string[:-2]  #because last character is a space, 2nd last is a comma
-        await message.channel.send('Type the category for update.\nAvailable categories are: `cancel`, `description`, {}'.format(gl_string))
+        gl_string = gl_string[:-2]  #because last character is a space(discord feature), 2nd last is a comma
+        await message.channel.send('Type the category for update.\nAvailable categories are: `cancel`, `description`, `available`, {}'.format(gl_string))
         def check_option(m):
             return m.author == message.author and m.channel == message.channel
         option = await client.wait_for('message', check=check_option, timeout=120.0)
@@ -169,7 +179,20 @@ async def on_message(message):
                 return m.author == message.author and m.channel == message.channel
             description = await client.wait_for('message',check=check_desc, timeout=120.0)
             description = description.content
-            newData = {'remarks':description}
+            card.remarks = description
+        elif option == 'available':
+            await message.channel.send('Enter `True` or `False` to set your available status.')
+            def avail(m):
+                return m.author == message.author and m.channel == message.channel
+            status = await client.wait_for('message', check=avail, timeout=120.0)
+            status = status.content.lower()
+            if status == 'true':
+                card.available = True
+            elif status == 'false':
+                card.available = False
+            else:
+                await message.channel.send('Incorrect option.')
+                return
         elif option in GUIDING_LANDS:
             await message.channel.send('Enter guilding land level, or `cancel`')
             def check_levels(m):
@@ -180,7 +203,7 @@ async def on_message(message):
                 if level == 'cancel':
                     return
                 elif int(level) >= 1 and int(level) <=7:
-                    newData = {option: int(level)}
+                    levels[option] = int(level)
                 else:
                     await message.channel.send('Incorrect input! Exiting guild card creation..')
                     return
@@ -194,12 +217,23 @@ async def on_message(message):
             await message.channel.send('Incorrect option! Exiting..')
             return
         if card.display_name != message.author.display_name:
-            newData['display_name'] = message.author.display_name
-        if newData is not None:
-            card.update(**newData)
-            card.reload()
+            card.display_name = message.author.display_name
+        card.save()
+        card.reload()
         await message.channel.send('Guild card updated!')
         await showcard(card)
+
+    async def searchCards(gl_type):
+        gl_type = gl_type.lower()
+        if gl_type in GUIDING_LANDS:
+            cards = Player.objects.get_cards(gl_type).all()
+            if cards:
+                for c in cards:
+                    await showcard(c)
+            else:
+                await message.channel.send('Unable to find cards.')
+        else:
+            await message.channel.send('Invalid search.')
 
 
 
@@ -229,32 +263,31 @@ async def on_message(message):
                     session_title = session_title_reply.content
 
                 await message.channel.send('Session created in {}'.format(channel.mention), delete_after=5.0)
+                title = '{}'.format(session_title)
+                session_id = '```fix\n{}```'.format(session)
+                embed = discord.Embed(description='```yaml\n{}```'.format(title), color=0xf1c40f)
+                embed.add_field(name='Session ID', value=session_id)
+                embed.set_footer(text='Added on {}'.format(now))
+                embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
+                msg = await channel.send(embed=embed)
+                cemoji = await message.guild.fetch_emoji(707541604508106818)  # custom emoji to mark session close
+                await msg.add_reaction(cemoji)
+                logger.info('{} added session "{}"'.format(message.author.display_name, session))
             else:
-                session = "".join(content.split())
-                session = session[:4] + ' ' + session[4:8] + ' ' + session[8:12]
-                session_title = 'Monster Hunting'
-            title = '{}'.format(session_title)
-            session_id = '```fix\n{}```'.format(session)
-            embed = discord.Embed(description='```yaml\n{}```'.format(title), color=0xf1c40f)
-            embed.add_field(name='Session ID', value=session_id)
-            embed.set_footer(text='Added on {}'.format(now))
-            embed.set_author(name=message.author.display_name,icon_url=message.author.avatar_url)
-            msg = await channel.send(embed=embed)
-            cemoji = await message.guild.fetch_emoji(707541604508106818)  #custom emoji to mark session close
-            await msg.add_reaction(cemoji)
-            logger.info('{} added session "{}"'.format(message.author.display_name, session))
+                await message.channel.send('{}, incorrect command syntax. Please use `/addsession` instead.'.format(message.author.mention), delete_after= 10.0)
+                return
         except asyncio.TimeoutError:
             logger.info('{} timed out when creating new session.'.format(message.author.display_name))
             await message.channel.send('{} timed out when creating new session.'.format(message.author.display_name), delete_after=5.0)
             pass
         finally:
-            try:
+            try:    #attempt message cleanup
                 await message.delete()
                 await prompt_session_id.delete()
                 await session_id_reply.delete()
                 await prompt_session_title.delete()
                 await session_title_reply.delete()
-            except discord.errors.NotFound:
+            except discord.errors.NotFound: #if message not found and unable to delete
                 pass
             except UnboundLocalError:
                 pass
@@ -272,42 +305,60 @@ async def on_message(message):
         await msg.add_reaction(siege_button)
 
     elif message.content.startswith('/card'):
-        card = Player.objects(player_id=message.author.id).first()
-        if card is None:
-            await message.channel.send('Creating guild card')
-            await add_card()
+        if message.channel.id == 707235194637123644:
+            card = Player.objects(player_id=message.author.id).first()
+            if card is None:
+                await message.channel.send('Creating guild card')
+                await add_card()
+            else:
+                await message.channel.send('Guild card exist. Updating guild card instead.')
+                await updatecards(card)
         else:
-            await message.channel.send('Guild card exist. Updating guild card instead.')
-            await updatecards(card)
+            await message.channel.send('Invalid channel')
 
     elif message.content.startswith('/showcard'):
-        card = Player.objects(player_id=message.author.id).first()
-        if card is None:
+        user_search = message.content[10:]
+        if len(user_search) == 0:
+            card = Player.objects(player_id=message.author.id).first()
+        else:
+            searched_member = message.guild.get_member_named(user_search)
+            card = Player.objects(player_id=searched_member.id).first()
+        if card is None and len(user_search) > 0:
+            await message.channel.send('{}, guild card for {} not found. '.format(message.author.mention, user_search))
+        elif card is None:
             await message.channel.send('{}, guild card not found. Type `/card` to create guild card.'.format(message.author.mention))
         else:
             await showcard(card)
 
+    elif message.content.startswith('/searchcard'):
+        land = message.content[12:]
+        if land == '':
+            await message.channel.send('Command is `/searchcard <guilding land>` \ne.g: `/searchcard forest`')
+            return
+        await searchCards(land)
 
     elif message.content.startswith('/help'):
         content = 'Available commands are: \n' \
                   '`/addsession <session_id>` - Adds a session with the given session ID \n' \
                   '`/addsession` - Bot will prompt you on what is the session ID \n' \
                   '`/addlfg` - Schedule an event or siege \n' \
+                  '`/card` - Create a personal guild card' \
+                  '`/showcard` - Show your guild card' \
+                  '`/showcard hunter` - Show guild card for hunter' \
+                  '`/searchcard forest` - Show all available guild card that has forest guilding lands leveled more than 6' \
                   '`/help` - This help message.'
         await message.channel.send(content)
 
-
-
-
-
 ###### test command #####
 
-    elif message.content.startswith('!test'):
-        member = message.author
-        if await check_mod(message.guild, member, baseline=633909898295377920) is True:
-            print('true')
-        else:
-            print('false')
+    # elif message.content.startswith('!test'):
+    #     me = message.author
+    #     chnl = client.get_channel(716562012158689320)
+    #     await chnl.set_permissions(me, read_messages=True, send_messages=True, embed_links=True)
+    #     overwrites = {guild.default_role: discord.PermissionOverwrite(read_messages=False), me: discord.PermissionOverwrite(read_messages=True, send_messages=False)}
+        # new_chnl = await guild.create_text_channel('test', overwrites=overwrites)
+        # await message.channel.send('Created new channel in {}'.format(new_chnl.mention))
+
 ############## ADMIN COMMANDS ###################
 
     elif message.content.startswith('&logoff'):
