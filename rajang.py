@@ -305,7 +305,8 @@ async def on_message(message):
         await msg.add_reaction(siege_button)
 
     elif message.content.startswith('/card'):
-        if message.channel.id == 707235194637123644:
+        chnl = client.get_channel(711487177606955087)
+        if message.channel.id == 711487177606955087:
             card = Player.objects(player_id=message.author.id).first()
             if card is None:
                 await message.channel.send('Creating guild card')
@@ -314,7 +315,7 @@ async def on_message(message):
                 await message.channel.send('Guild card exist. Updating guild card instead.')
                 await updatecards(card)
         else:
-            await message.channel.send('Invalid channel')
+            await message.channel.send('Invalid channel. This command can only be used in {}'.format(chnl.mention))
 
     elif message.content.startswith('/showcard'):
         user_search = message.content[10:]
