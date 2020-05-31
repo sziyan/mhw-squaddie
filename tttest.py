@@ -1,6 +1,3 @@
-test = {'1':'2'}
+test = {'1':'2', 'three':'four'}
 
-test['3'] = '4'
-
-print(test)
 
