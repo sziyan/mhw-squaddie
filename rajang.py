@@ -343,10 +343,10 @@ async def on_message(message):
                   '`/addsession <session_id>` - Adds a session with the given session ID \n' \
                   '`/addsession` - Bot will prompt you on what is the session ID \n' \
                   '`/addlfg` - Schedule an event or siege \n' \
-                  '`/card` - Create a personal guild card' \
-                  '`/showcard` - Show your guild card' \
-                  '`/showcard hunter` - Show guild card for hunter' \
-                  '`/searchcard forest` - Show all available guild card that has forest guilding lands leveled more than 6' \
+                  '`/card` - Create a personal guild card \n' \
+                  '`/showcard` - Show your guild card \n' \
+                  '`/showcard hunter` - Show guild card for hunter \n' \
+                  '`/searchcard forest` - Show all available guild card that has forest guilding lands leveled more than 6 \n' \
                   '`/help` - This help message.'
         await message.channel.send(content)
 
